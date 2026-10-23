@@ -49,17 +49,16 @@ export async function createBill(params: {
   payload.append('billName', 'MIAT Central Pro');
   payload.append('billDescription', 'Pro Subscription Access');
   payload.append('billPriceSetting', '1');
-  payload.append('billPayorRequired', '1');
 
-  // Send both parameter naming variations for API compatibility
+  // CRITICAL FIX: Changed from billPayorRequired -> billPayorInfo
+  payload.append('billPayorInfo', '1');
+
+  // Exact parameter names expected by ToyyibPay REST API
   payload.append('billTo', studentName);
   payload.append('billEmail', studentEmail);
   payload.append('billPhone', studentPhone);
-  payload.append('billPayorName', studentName);
-  payload.append('billPayorEmail', studentEmail);
-  payload.append('billPayorPhone', studentPhone);
 
-  payload.append('billAmount', '1500');
+  payload.append('billAmount', '1500'); // RM 15.00 in cents
   payload.append('billReturnUrl', params.returnUrl);
   payload.append('billCallbackUrl', params.callbackUrl);
   payload.append('billExternalReferenceNo', params.userId || 'SUB-PRO');
@@ -92,7 +91,7 @@ export async function createBill(params: {
       };
     }
 
-    // ToyyibPay may return BillCode (capital) or billCode (lowercase)
+    // ToyyibPay returns an array on success: [{ BillCode: "xxx" }]
     const billCode = Array.isArray(data)
       ? data[0]?.BillCode ?? data[0]?.billCode
       : data.BillCode ?? data.billCode;
