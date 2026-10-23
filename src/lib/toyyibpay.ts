@@ -39,35 +39,27 @@ export async function createBill(params: {
   if ('error' in creds) return creds;
 
   const payorName = params.userFullName || 'MIAT Student';
+  const payorEmail = params.userEmail || 'student@s.unikl.edu.my';
 
-  // ToyyibPay's PHP REST endpoint expects URL-encoded form data,
-  // not multipart/form-data. URLSearchParams guarantees proper encoding.
-  const form = new URLSearchParams();
-  form.append('userSecretKey', creds.secretKey);
-  form.append('categoryCode', creds.categoryCode);
-  form.append('billName', 'MIAT Central Pro Subscription');
-  form.append('billDescription', 'Monthly access to EASA question banks and UniKL study materials');
-  form.append('billPriceSetting', '1');
-  form.append('billPayorRequired', '1');
-  form.append('billAmount', '1500');
-  form.append('billReturnUrl', params.returnUrl);
-  form.append('billCallbackUrl', params.callbackUrl);
-  form.append('billExternalReferenceNo', params.userId);
-  // Payor info — ToyyibPay requires these when billPayorRequired is 1.
-  // Some API versions use billTo/billEmail/billPhone, others use billPayorName/billPayorEmail/billPayorPhone.
-  // We send both sets to cover all versions.
-  form.append('billTo', payorName);
-  form.append('billEmail', params.userEmail);
-  form.append('billPhone', '0123456789');
-  form.append('billPayorName', payorName);
-  form.append('billPayorEmail', params.userEmail);
-  form.append('billPayorPhone', '0123456789');
-  form.append('billSplitPaymentArgs', '');
-  form.append('billPaymentChannel', '0');
-  form.append('billContentFields', '');
-  form.append('billChargeToCustomer', '');
+  // ToyyibPay's PHP REST endpoint expects URL-encoded form data with exact parameter names.
+  // Sending duplicate/extra fields (billPayorName etc.) causes "billPayorInfo parameter is empty".
+  const form = new URLSearchParams({
+    userSecretKey: creds.secretKey,
+    categoryCode: creds.categoryCode,
+    billName: 'MIAT Central Pro Subscription',
+    billDescription: 'Monthly access to EASA question banks and UniKL study materials',
+    billPriceSetting: '1',
+    billPayorRequired: '1',
+    billTo: payorName,
+    billEmail: payorEmail,
+    billPhone: '0123456789',
+    billAmount: '1500',
+    billReturnUrl: params.returnUrl,
+    billCallbackUrl: params.callbackUrl,
+    billExternalReferenceNo: params.userId || '',
+  });
 
-  console.log('[toyyibpay] createBill payload keys:', [...form.keys()].join(', '));
+  console.log('[toyyibpay] createBill payload:', form.toString());
 
   try {
     const response = await fetch(`${TOYYIBPAY_API}/createBill`, {
@@ -122,14 +114,16 @@ export async function verifyBill(billCode: string): Promise<VerifyBillResult | T
   const creds = getCredentials();
   if ('error' in creds) return creds;
 
-  const formData = new FormData();
-  formData.append('userSecretKey', creds.secretKey);
-  formData.append('billCode', billCode);
+  const form = new URLSearchParams({
+    userSecretKey: creds.secretKey,
+    billCode: billCode,
+  });
 
   try {
     const response = await fetch(`${TOYYIBPAY_API}/getBillTransactions`, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
     });
 
     if (!response.ok) {
