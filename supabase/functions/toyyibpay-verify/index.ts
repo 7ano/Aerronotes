@@ -20,21 +20,24 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("[toyyibpay-verify] Missing Authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     const { data: { user }, error: userError } = await userSupabase.auth.getUser();
     if (userError || !user) {
+      console.error("[toyyibpay-verify] Auth failed:", userError?.message ?? "no user");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -54,16 +57,18 @@ Deno.serve(async (req: Request) => {
     const userSecretKey = Deno.env.get("TOYYIBPAY_SECRET_KEY");
 
     if (!userSecretKey) {
+      console.error("[toyyibpay-verify] Missing TOYYIBPAY_SECRET_KEY env var");
       return new Response(
         JSON.stringify({ error: "ToyyibPay credentials not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Check transaction status via ToyyibPay API
     const formData = new FormData();
     formData.append("userSecretKey", userSecretKey);
     formData.append("billCode", billCode);
+
+    console.log("[toyyibpay-verify] Checking transaction status for billCode:", billCode);
 
     const toyyibpayResponse = await fetch(
       "https://toyyibpay.com/index.php/api/getBillTransactions",
@@ -72,7 +77,11 @@ Deno.serve(async (req: Request) => {
 
     if (!toyyibpayResponse.ok) {
       const errorText = await toyyibpayResponse.text();
-      console.error("ToyyibPay verify error:", errorText);
+      console.error("[toyyibpay-verify] ToyyibPay API error:", {
+        status: toyyibpayResponse.status,
+        statusText: toyyibpayResponse.statusText,
+        body: errorText,
+      });
       return new Response(
         JSON.stringify({ error: "Failed to verify payment with ToyyibPay" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -84,24 +93,24 @@ Deno.serve(async (req: Request) => {
       (t) => t.billpaymentStatus === 1 || t.billStatus === "Paid",
     );
 
+    console.log("[toyyibpay-verify] Payment status:", hasPaid ? "paid" : "pending");
+
     const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (hasPaid) {
-      // Update transaction status to paid
       await adminSupabase
         .from("transactions")
         .update({ status: "paid", updated_at: new Date().toISOString() })
         .eq("bill_code", billCode)
         .eq("user_id", user.id);
 
-      // Set is_pro = true on the student's profile
       const { error: profileError } = await adminSupabase
         .from("student_profiles")
         .update({ is_pro: true, updated_at: new Date().toISOString() })
         .eq("id", user.id);
 
       if (profileError) {
-        console.error("Failed to update student profile:", profileError.message);
+        console.error("[toyyibpay-verify] Failed to update student profile:", profileError.message);
       }
 
       return new Response(
@@ -110,7 +119,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Still pending
     await adminSupabase
       .from("transactions")
       .update({ status: "pending", updated_at: new Date().toISOString() })
@@ -122,9 +130,9 @@ Deno.serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
-    console.error("Unexpected error:", err);
+    console.error("[toyyibpay-verify] Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: `Internal server error: ${err instanceof Error ? err.message : String(err)}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

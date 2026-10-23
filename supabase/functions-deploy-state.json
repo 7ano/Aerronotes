@@ -3,11 +3,11 @@
   "functions": {
     "toyyibpay-create-bill": {
       "hasChanged": false,
-      "hash": "37226605d87dd43927db86a358ce0fb49bc34331b01a54a7dd87bcffb258a82d"
+      "hash": "8b42fecabadda1df0c7920647e89833f991de00d8a0f598038fda6c7414e4cb5"
     },
     "toyyibpay-verify": {
       "hasChanged": false,
-      "hash": "3e70322b8d0ee1e23e3ab3f93df0227d5b42f9fa464e82c3be3e72fe0f5bf0bf"
+      "hash": "7ada6a98ccf6f905d2c1bb05dc3a5abe990eb4fa65cddab2b03b96dc39d6980f"
     }
   }
 }

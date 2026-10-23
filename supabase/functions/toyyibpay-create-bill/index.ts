@@ -11,6 +11,10 @@ interface CreateBillResponse {
   [key: string]: unknown;
 }
 
+interface CreateBillRequest {
+  returnUrl?: string;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -19,21 +23,24 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("[toyyibpay-create-bill] Missing Authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const userSupabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     const { data: { user }, error: userError } = await userSupabase.auth.getUser();
     if (userError || !user) {
+      console.error("[toyyibpay-create-bill] Auth failed:", userError?.message ?? "no user");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -44,13 +51,24 @@ Deno.serve(async (req: Request) => {
     const categoryCode = Deno.env.get("TOYYIBPAY_CATEGORY_CODE");
 
     if (!userSecretKey || !categoryCode) {
+      console.error("[toyyibpay-create-bill] Missing ToyyibPay env vars:", {
+        hasSecretKey: !!userSecretKey,
+        hasCategoryCode: !!categoryCode,
+      });
       return new Response(
-        JSON.stringify({ error: "ToyyibPay credentials not configured" }),
+        JSON.stringify({ error: "ToyyibPay credentials not configured. Please add TOYYIBPAY_SECRET_KEY and TOYYIBPAY_CATEGORY_CODE as edge function secrets." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const returnUrl = `${new URL(req.url).origin.replace(" functions", "")}/payment-success`;
+    // Parse the return URL from the request body, fallback to constructing from request origin
+    let requestBody: CreateBillRequest = {};
+    try {
+      requestBody = await req.json();
+    } catch {
+      // Body might be empty, that's okay
+    }
+    const returnUrl = requestBody.returnUrl || `${new URL(req.url).origin}/payment-success`;
 
     const formData = new FormData();
     formData.append("userSecretKey", userSecretKey);
@@ -69,6 +87,8 @@ Deno.serve(async (req: Request) => {
     formData.append("billContentFields", "");
     formData.append("billChargeToCustomer", "");
 
+    console.log("[toyyibpay-create-bill] Calling ToyyibPay createBill for user:", user.id);
+
     const toyyibpayResponse = await fetch(
       "https://toyyibpay.com/index.php/api/createBill",
       { method: "POST", body: formData },
@@ -76,9 +96,13 @@ Deno.serve(async (req: Request) => {
 
     if (!toyyibpayResponse.ok) {
       const errorText = await toyyibpayResponse.text();
-      console.error("ToyyibPay API error:", errorText);
+      console.error("[toyyibpay-create-bill] ToyyibPay API error:", {
+        status: toyyibpayResponse.status,
+        statusText: toyyibpayResponse.statusText,
+        body: errorText,
+      });
       return new Response(
-        JSON.stringify({ error: "Failed to create bill with ToyyibPay" }),
+        JSON.stringify({ error: `ToyyibPay API returned ${toyyibpayResponse.status}: ${errorText.slice(0, 200)}` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -87,12 +111,14 @@ Deno.serve(async (req: Request) => {
     const billCode = Array.isArray(result) ? result[0]?.billCode : result?.billCode;
 
     if (!billCode) {
-      console.error("ToyyibPay response missing billCode:", JSON.stringify(result));
+      console.error("[toyyibpay-create-bill] No billCode in response:", JSON.stringify(result));
       return new Response(
         JSON.stringify({ error: "ToyyibPay did not return a bill code" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    console.log("[toyyibpay-create-bill] Bill created successfully, billCode:", billCode);
 
     // Store the billCode in the transactions table using service role
     const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -106,7 +132,7 @@ Deno.serve(async (req: Request) => {
       });
 
     if (insertError) {
-      console.error("Failed to insert transaction:", insertError.message);
+      console.error("[toyyibpay-create-bill] Failed to insert transaction:", insertError.message);
     }
 
     return new Response(
@@ -114,9 +140,9 @@ Deno.serve(async (req: Request) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
-    console.error("Unexpected error:", err);
+    console.error("[toyyibpay-create-bill] Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: `Internal server error: ${err instanceof Error ? err.message : String(err)}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

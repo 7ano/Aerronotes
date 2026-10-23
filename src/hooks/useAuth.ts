@@ -108,31 +108,43 @@ export function useAuth(): AuthState {
   const startCheckout = useCallback(async (): Promise<{ error: string | null }> => {
     if (!session) return { error: 'Please sign in to upgrade to Pro' };
 
+    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-create-bill`;
+    const returnUrl = `${window.location.origin}/payment-success`;
+
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-create-bill`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        body: JSON.stringify({ returnUrl }),
+      });
 
       if (!response.ok) {
-        const errBody = await response.json().catch(() => ({}));
-        return { error: errBody.error ?? 'Failed to start checkout' };
+        const errText = await response.text();
+        let errBody: { error?: string } = {};
+        try { errBody = JSON.parse(errText); } catch { /* not JSON */ }
+        console.error('[startCheckout] Edge function error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errText,
+        });
+        return { error: errBody.error ?? `Checkout failed (HTTP ${response.status})` };
       }
 
-      const { billCode } = await response.json();
-      if (!billCode) return { error: 'No bill code returned from ToyyibPay' };
+      const data = await response.json();
+      const billCode: string | undefined = data.billCode;
+      if (!billCode) {
+        console.error('[startCheckout] No billCode in response:', data);
+        return { error: 'ToyyibPay did not return a bill code. Please try again.' };
+      }
 
-      // Redirect to ToyyibPay payment page
       window.location.href = `https://toyyibpay.com/${billCode}`;
       return { error: null };
-    } catch {
-      return { error: 'Network error — please try again' };
+    } catch (err) {
+      console.error('[startCheckout] Network/fetch error:', err);
+      return { error: 'Network error — could not reach the checkout service. Please check your connection and try again.' };
     }
   }, [session]);
 
@@ -154,17 +166,25 @@ export function useAuth(): AuthState {
         },
       );
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[verifyPayment] Edge function error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errText,
+        });
+        return null;
+      }
 
       const result = await response.json();
 
       if (result.isPro) {
-        // Reload the profile to reflect the updated is_pro status
         if (user) await loadProfile(user.id);
       }
 
       return { status: result.status ?? 'pending', isPro: result.isPro ?? false };
-    } catch {
+    } catch (err) {
+      console.error('[verifyPayment] Network/fetch error:', err);
       return null;
     }
   }, [session, user]);
