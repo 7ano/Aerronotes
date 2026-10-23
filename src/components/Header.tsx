@@ -1,4 +1,5 @@
-import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown } from 'lucide-react';
+import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown, LogOut } from 'lucide-react';
+import type { StudentProfile } from '@/types';
 
 export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes';
 
@@ -20,9 +21,24 @@ interface HeaderProps {
   onTabChange: (tab: TabId) => void;
   isPro: boolean;
   onUpgradeClick: () => void;
+  profile: StudentProfile | null;
+  onSignInClick: () => void;
+  onSignOut: () => void;
 }
 
-export default function Header({ activeTab, onTabChange, isPro, onUpgradeClick }: HeaderProps) {
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+export default function Header({
+  activeTab, onTabChange, isPro, onUpgradeClick, profile, onSignInClick, onSignOut,
+}: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -48,13 +64,51 @@ export default function Header({ activeTab, onTabChange, isPro, onUpgradeClick }
                 <Crown className="h-3.5 w-3.5" />
                 Pro
               </span>
-            ) : (
+            ) : profile ? (
               <button
                 onClick={onUpgradeClick}
                 className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
               >
                 <Crown className="h-3.5 w-3.5" />
                 Upgrade
+              </button>
+            ) : null}
+
+            {/* Auth: avatar or sign-in */}
+            {profile ? (
+              <div className="group relative flex items-center gap-2.5">
+                <div className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/50 py-1 pl-1 pr-3">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-sky-500 to-amber-500 text-xs font-bold text-white">
+                    {initials(profile.full_name)}
+                  </div>
+                  <span className="hidden text-xs font-medium text-slate-200 sm:inline">
+                    {profile.full_name.split(' ')[0]}
+                  </span>
+                </div>
+                {/* Dropdown */}
+                <div className="invisible absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-700/60 bg-slate-900 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                  <div className="border-b border-slate-800/60 px-4 py-3">
+                    <p className="text-sm font-semibold text-white">{profile.full_name}</p>
+                    <p className="text-xs text-slate-400">{profile.student_id}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-slate-500">{profile.email}</p>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={onSignOut}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={onSignInClick}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-800"
+              >
+                Sign In
               </button>
             )}
 
