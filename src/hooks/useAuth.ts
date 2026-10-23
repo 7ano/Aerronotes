@@ -3,7 +3,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { StudentProfile } from '@/types';
 
-const ALLOWED_DOMAIN = '@student.unikl.edu.my';
+const ALLOWED_DOMAINS = ['@s.unikl.edu.my', '@student.unikl.edu.my'];
 
 export interface AuthState {
   user: User | null;
@@ -64,8 +64,9 @@ export function useAuth(): AuthState {
     fullName: string,
     studentId: string,
   ): Promise<{ error: string | null }> => {
-    if (!email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
-      return { error: `Email must end with ${ALLOWED_DOMAIN}` };
+    const lowerEmail = email.toLowerCase();
+    if (!ALLOWED_DOMAINS.some(d => lowerEmail.endsWith(d))) {
+      return { error: 'Please use a valid UniKL student email address (@s.unikl.edu.my).' };
     }
 
     const { data, error } = await supabase.auth.signUp({
