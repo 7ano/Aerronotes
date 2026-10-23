@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Header, { type TabId } from '@/components/Header';
 import ResourceHub from '@/components/ResourceHub';
 import QuizEngine from '@/components/QuizEngine';
@@ -7,13 +7,55 @@ import NoteSubmission from '@/components/NoteSubmission';
 import Newsletter from '@/components/Newsletter';
 import ProUpgradeModal from '@/components/ProUpgradeModal';
 import AuthModal from '@/components/AuthModal';
+import PaymentSuccess from '@/components/PaymentSuccess';
 import { useAuth } from '@/hooks/useAuth';
+
+function usePaymentReturnRoute() {
+  const [route] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/payment-success') return 'payment-success';
+    return 'main';
+  });
+
+  const billCode = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('billcode') ?? params.get('billCode') ?? null;
+  }, []);
+
+  return { route, billCode };
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('resources');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const { profile, isPro, signUp, signIn, signOut, upgradeToPro } = useAuth();
+  const { profile, isPro, signUp, signIn, signOut, startCheckout, verifyPayment } = useAuth();
+  const { route, billCode } = usePaymentReturnRoute();
+
+  function navigateToMain() {
+    window.history.pushState({}, '', '/');
+    window.location.reload();
+  }
+
+  if (route === 'payment-success') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="pointer-events-none fixed inset-0 overflow-hidden">
+          <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-amber-500/5 blur-3xl" />
+        </div>
+        <div className="relative">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <PaymentSuccess
+              billCode={billCode}
+              isPro={isPro}
+              onVerify={verifyPayment}
+              onBack={navigateToMain}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -73,8 +115,9 @@ export default function App() {
       <ProUpgradeModal
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
-        onUpgrade={upgradeToPro}
         isPro={isPro}
+        userEmail={profile?.email ?? null}
+        onStartCheckout={startCheckout}
       />
     </div>
   );

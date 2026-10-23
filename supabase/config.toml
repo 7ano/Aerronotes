@@ -1,0 +1,7 @@
+[functions.toyyibpay-create-bill]
+verify_jwt = true
+entrypoint = "./functions/toyyibpay-create-bill/index.ts"
+
+[functions.toyyibpay-verify]
+verify_jwt = true
+entrypoint = "./functions/toyyibpay-verify/index.ts"

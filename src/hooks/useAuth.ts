@@ -15,6 +15,8 @@ export interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   upgradeToPro: () => Promise<void>;
+  startCheckout: () => Promise<{ error: string | null }>;
+  verifyPayment: (billCode: string) => Promise<{ status: string; isPro: boolean } | null>;
 }
 
 export function useAuth(): AuthState {
@@ -72,9 +74,7 @@ export function useAuth(): AuthState {
       options: { data: { full_name: fullName, student_id: studentId } },
     });
 
-    if (error) {
-      return { error: error.message };
-    }
+    if (error) return { error: error.message };
 
     if (data.user) {
       const { error: profileError } = await supabase
@@ -86,9 +86,7 @@ export function useAuth(): AuthState {
           student_id: studentId,
           is_pro: false,
         });
-      if (profileError) {
-        return { error: profileError.message };
-      }
+      if (profileError) return { error: profileError.message };
     }
 
     return { error: null };
@@ -119,6 +117,70 @@ export function useAuth(): AuthState {
     if (data) setProfile(data as StudentProfile);
   }, [user]);
 
+  const startCheckout = useCallback(async (): Promise<{ error: string | null }> => {
+    if (!session) return { error: 'Please sign in to upgrade to Pro' };
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-create-bill`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        return { error: errBody.error ?? 'Failed to start checkout' };
+      }
+
+      const { billCode } = await response.json();
+      if (!billCode) return { error: 'No bill code returned from ToyyibPay' };
+
+      // Redirect to ToyyibPay payment page
+      window.location.href = `https://toyyibpay.com/${billCode}`;
+      return { error: null };
+    } catch {
+      return { error: 'Network error — please try again' };
+    }
+  }, [session]);
+
+  const verifyPayment = useCallback(async (
+    billCode: string,
+  ): Promise<{ status: string; isPro: boolean } | null> => {
+    if (!session) return null;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-verify`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ billCode }),
+        },
+      );
+
+      if (!response.ok) return null;
+
+      const result = await response.json();
+
+      if (result.isPro) {
+        // Reload the profile to reflect the updated is_pro status
+        if (user) await loadProfile(user.id);
+      }
+
+      return { status: result.status ?? 'pending', isPro: result.isPro ?? false };
+    } catch {
+      return null;
+    }
+  }, [session, user]);
+
   return {
     user,
     profile,
@@ -129,5 +191,7 @@ export function useAuth(): AuthState {
     signIn,
     signOut,
     upgradeToPro,
+    startCheckout,
+    verifyPayment,
   };
 }

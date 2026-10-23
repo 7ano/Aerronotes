@@ -1,0 +1,13 @@
+{
+  "projectId": "72276871",
+  "functions": {
+    "toyyibpay-create-bill": {
+      "hasChanged": false,
+      "hash": "37226605d87dd43927db86a358ce0fb49bc34331b01a54a7dd87bcffb258a82d"
+    },
+    "toyyibpay-verify": {
+      "hasChanged": false,
+      "hash": "3e70322b8d0ee1e23e3ab3f93df0227d5b42f9fa464e82c3be3e72fe0f5bf0bf"
+    }
+  }
+}

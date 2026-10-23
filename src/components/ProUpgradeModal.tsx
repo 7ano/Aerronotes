@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import {
   X, Check, Sparkles, Crown, FileText, Brain, Download,
-  Loader2, ShieldCheck,
+  Loader2, ShieldCheck, AlertCircle, CreditCard,
 } from 'lucide-react';
 
 interface ProUpgradeModalProps {
   open: boolean;
   onClose: () => void;
-  onUpgrade: () => Promise<void>;
   isPro: boolean;
+  userEmail: string | null;
+  onStartCheckout: () => Promise<{ error: string | null }>;
 }
 
 const freeFeatures = [
@@ -26,21 +27,23 @@ const proFeatures = [
   'Priority access to newly added materials',
 ];
 
-export default function ProUpgradeModal({ open, onClose, onUpgrade, isPro }: ProUpgradeModalProps) {
+export default function ProUpgradeModal({
+  open, onClose, isPro, userEmail, onStartCheckout,
+}: ProUpgradeModalProps) {
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   if (!open) return null;
 
-  async function handleUpgrade() {
+  async function handleCheckout() {
+    setError(null);
     setProcessing(true);
-    await onUpgrade();
+    const { error: checkoutError } = await onStartCheckout();
     setProcessing(false);
-    setDone(true);
-    setTimeout(() => {
-      setDone(false);
-      onClose();
-    }, 2000);
+    if (checkoutError) {
+      setError(checkoutError);
+    }
   }
 
   return (
@@ -82,6 +85,22 @@ export default function ProUpgradeModal({ open, onClose, onUpgrade, isPro }: Pro
               className="mt-6 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
             >
               Continue
+            </button>
+          </div>
+        ) : !userEmail ? (
+          <div className="flex flex-col items-center justify-center py-20 px-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/15">
+              <Crown className="h-8 w-8 text-amber-400" />
+            </div>
+            <h2 className="mt-4 text-xl font-bold text-white">Sign In to Upgrade</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Please sign in with your UniKL student account to upgrade to Pro.
+            </p>
+            <button
+              onClick={onClose}
+              className="mt-6 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
+            >
+              Close
             </button>
           </div>
         ) : (
@@ -157,21 +176,29 @@ export default function ProUpgradeModal({ open, onClose, onUpgrade, isPro }: Pro
               </div>
             </div>
 
+            {/* Error */}
+            {error && (
+              <div className="mx-8 mb-2 flex items-start gap-2 rounded-lg border border-red-800/50 bg-red-950/30 px-3 py-2.5">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <p className="text-xs text-red-300">{error}</p>
+              </div>
+            )}
+
             {/* Action */}
             <div className="px-8 pb-8 pt-4">
               <button
-                onClick={handleUpgrade}
+                onClick={handleCheckout}
                 disabled={processing}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 py-3.5 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition hover:shadow-amber-500/50 disabled:opacity-50"
               >
                 {processing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting to ToyyibPay...</>
                 ) : (
-                  <><Crown className="h-4 w-4" /> Upgrade to Pro — RM15/month</>
+                  <><CreditCard className="h-4 w-4" /> Pay RM15/month via ToyyibPay</>
                 )}
               </button>
               <p className="mt-3 text-center text-xs text-slate-500">
-                Demo mode — clicking upgrade instantly activates Pro access. No payment required.
+                Secure payment via ToyyibPay · FPX & credit card accepted
               </p>
             </div>
           </>
