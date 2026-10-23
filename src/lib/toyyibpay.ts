@@ -38,34 +38,42 @@ export async function createBill(params: {
   const creds = getCredentials();
   if ('error' in creds) return creds;
 
-  const payorName = params.userFullName || params.userEmail.split('@')[0];
+  const payorName = params.userFullName || 'MIAT Student';
 
-  const formData = new FormData();
-  formData.append('userSecretKey', creds.secretKey);
-  formData.append('categoryCode', creds.categoryCode);
-  formData.append('billName', 'MIAT Central Pro Subscription');
-  formData.append(
-    'billDescription',
-    'Monthly access to EASA question banks and UniKL study materials',
-  );
-  formData.append('billPriceSetting', '1');
-  formData.append('billPayorRequired', '1');
-  formData.append('billAmount', '1500');
-  formData.append('billReturnUrl', params.returnUrl);
-  formData.append('billCallbackUrl', params.callbackUrl);
-  formData.append('billExternalReferenceNo', params.userId);
-  formData.append('billPayorName', payorName);
-  formData.append('billPayorEmail', params.userEmail);
-  formData.append('billPayorPhone', '0123456789');
-  formData.append('billSplitPaymentArgs', '');
-  formData.append('billPaymentChannel', '0');
-  formData.append('billContentFields', '');
-  formData.append('billChargeToCustomer', '');
+  // ToyyibPay's PHP REST endpoint expects URL-encoded form data,
+  // not multipart/form-data. URLSearchParams guarantees proper encoding.
+  const form = new URLSearchParams();
+  form.append('userSecretKey', creds.secretKey);
+  form.append('categoryCode', creds.categoryCode);
+  form.append('billName', 'MIAT Central Pro Subscription');
+  form.append('billDescription', 'Monthly access to EASA question banks and UniKL study materials');
+  form.append('billPriceSetting', '1');
+  form.append('billPayorRequired', '1');
+  form.append('billAmount', '1500');
+  form.append('billReturnUrl', params.returnUrl);
+  form.append('billCallbackUrl', params.callbackUrl);
+  form.append('billExternalReferenceNo', params.userId);
+  // Payor info — ToyyibPay requires these when billPayorRequired is 1.
+  // Some API versions use billTo/billEmail/billPhone, others use billPayorName/billPayorEmail/billPayorPhone.
+  // We send both sets to cover all versions.
+  form.append('billTo', payorName);
+  form.append('billEmail', params.userEmail);
+  form.append('billPhone', '0123456789');
+  form.append('billPayorName', payorName);
+  form.append('billPayorEmail', params.userEmail);
+  form.append('billPayorPhone', '0123456789');
+  form.append('billSplitPaymentArgs', '');
+  form.append('billPaymentChannel', '0');
+  form.append('billContentFields', '');
+  form.append('billChargeToCustomer', '');
+
+  console.log('[toyyibpay] createBill payload keys:', [...form.keys()].join(', '));
 
   try {
     const response = await fetch(`${TOYYIBPAY_API}/createBill`, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
     });
 
     if (!response.ok) {
@@ -81,8 +89,18 @@ export async function createBill(params: {
       };
     }
 
-    const result = await response.json();
-    const billCode = Array.isArray(result) ? result[0]?.billCode : result?.billCode;
+    const rawText = await response.text();
+    console.log('[toyyibpay] createBill raw response:', rawText.slice(0, 500));
+
+    let result: unknown;
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      console.error('[toyyibpay] createBill: non-JSON response:', rawText);
+      return { error: `ToyyibPay returned a non-JSON response: ${rawText.slice(0, 300)}` };
+    }
+
+    const billCode = Array.isArray(result) ? result[0]?.billCode : (result as { billCode?: string })?.billCode;
 
     if (!billCode) {
       console.error('[toyyibpay] createBill: no billCode in response:', result);
