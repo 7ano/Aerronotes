@@ -1,5 +1,3 @@
-const TOYYIBPAY_API = 'https://toyyibpay.com/index.php/api';
-
 export interface CreateBillResult {
   billCode: string;
 }
@@ -29,69 +27,28 @@ export async function createBill(params: {
   returnUrl: string;
   callbackUrl: string;
 }): Promise<CreateBillResult | ToyyibPayError> {
-  const secretKey = import.meta.env.VITE_TOYYIBPAY_SECRET_KEY || '';
-  const categoryCode = import.meta.env.VITE_TOYYIBPAY_CATEGORY_CODE || '';
-
-  if (!secretKey || !categoryCode) {
-    return {
-      error:
-        'ToyyibPay credentials are not configured. Please add VITE_TOYYIBPAY_SECRET_KEY and VITE_TOYYIBPAY_CATEGORY_CODE to your environment.',
-    };
-  }
-
-  const studentName = params.userFullName || params.userEmail.split('@')[0] || 'MIAT Student';
-  const studentEmail = params.userEmail || 'student@s.unikl.edu.my';
-  const studentPhone = params.userPhone || '0123456789';
-
-  const payload = new URLSearchParams();
-  payload.append('userSecretKey', secretKey);
-  payload.append('categoryCode', categoryCode);
-  payload.append('billName', 'MIAT Central Pro');
-  payload.append('billDescription', 'Pro Subscription Access');
-  payload.append('billPriceSetting', '1');
-
-  // CRITICAL FIX: Changed from billPayorRequired -> billPayorInfo
-  payload.append('billPayorInfo', '1');
-
-  // Exact parameter names expected by ToyyibPay REST API
-  payload.append('billTo', studentName);
-  payload.append('billEmail', studentEmail);
-  payload.append('billPhone', studentPhone);
-
-  payload.append('billAmount', '1500'); // RM 15.00 in cents
-  payload.append('billReturnUrl', params.returnUrl);
-  payload.append('billCallbackUrl', params.callbackUrl);
-  payload.append('billExternalReferenceNo', params.userId || 'SUB-PRO');
-
-  const payloadStr = payload.toString();
-  console.log('[toyyibpay] createBill payload string:', payloadStr);
-
   try {
-    const response = await fetch(`${TOYYIBPAY_API}/createBill`, {
+    // Routes request through serverless proxy to eliminate browser CORS dropping form fields
+    const response = await fetch('/api/create-toyyibpay-bill', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: payloadStr,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
     });
 
     const data: ToyyibPayBillResponse[] | ToyyibPayBillResponse = await response.json();
-    console.log('[toyyibpay] createBill response:', data);
 
     if (!response.ok) {
       const errorMsg = Array.isArray(data)
         ? data[0]?.msg ?? JSON.stringify(data)
-        : data.msg ?? JSON.stringify(data);
-      console.error('[toyyibpay] createBill HTTP error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: data,
-      });
+        : (data as any)?.error ?? (data as ToyyibPayBillResponse)?.msg ?? JSON.stringify(data);
+      
       return {
         error: `ToyyibPay API error (HTTP ${response.status}): ${errorMsg}`,
         status: response.status,
       };
     }
 
-    // ToyyibPay returns an array on success: [{ BillCode: "xxx" }]
+    // Parse bill code from Array [{ BillCode: "xxx" }] or Object { BillCode: "xxx" }
     const billCode = Array.isArray(data)
       ? data[0]?.BillCode ?? data[0]?.billCode
       : data.BillCode ?? data.billCode;
@@ -100,7 +57,6 @@ export async function createBill(params: {
       const errorDetail = Array.isArray(data)
         ? data[0]?.msg ?? JSON.stringify(data)
         : data.msg ?? JSON.stringify(data);
-      console.error('[toyyibpay] createBill: no bill code in response:', data);
       return {
         error: `ToyyibPay did not return a bill code. Response: ${errorDetail.slice(0, 300)}`,
       };
@@ -108,21 +64,17 @@ export async function createBill(params: {
 
     return { billCode };
   } catch (err) {
-    console.error('[toyyibpay] createBill fetch error:', err);
     return {
-      error: `Network error contacting ToyyibPay: ${err instanceof Error ? err.message : String(err)}`,
+      error: `Network error contacting server: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
 
 export async function verifyBill(billCode: string): Promise<VerifyBillResult | ToyyibPayError> {
   const secretKey = import.meta.env.VITE_TOYYIBPAY_SECRET_KEY || '';
-  const categoryCode = import.meta.env.VITE_TOYYIBPAY_CATEGORY_CODE || '';
 
-  if (!secretKey || !categoryCode) {
-    return {
-      error: 'ToyyibPay credentials are not configured.',
-    };
+  if (!secretKey) {
+    return { error: 'ToyyibPay secret key is not configured.' };
   }
 
   const payload = new URLSearchParams();
@@ -130,7 +82,7 @@ export async function verifyBill(billCode: string): Promise<VerifyBillResult | T
   payload.append('billCode', billCode);
 
   try {
-    const response = await fetch(`${TOYYIBPAY_API}/getBillTransactions`, {
+    const response = await fetch('https://toyyibpay.com/index.php/api/getBillTransactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: payload.toString(),
@@ -138,11 +90,6 @@ export async function verifyBill(billCode: string): Promise<VerifyBillResult | T
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[toyyibpay] getBillTransactions HTTP error:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
       return {
         error: `ToyyibPay verify error (HTTP ${response.status}): ${errorText.slice(0, 300)}`,
         status: response.status,
@@ -162,7 +109,6 @@ export async function verifyBill(billCode: string): Promise<VerifyBillResult | T
       isPro: hasPaid,
     };
   } catch (err) {
-    console.error('[toyyibpay] getBillTransactions fetch error:', err);
     return {
       error: `Network error verifying payment: ${err instanceof Error ? err.message : String(err)}`,
     };
