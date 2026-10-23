@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { createBill, verifyBill } from '@/lib/toyyibpay';
 import type { StudentProfile } from '@/types';
 
 const ALLOWED_DOMAINS = ['@s.unikl.edu.my', '@student.unikl.edu.my'];
@@ -106,46 +107,37 @@ export function useAuth(): AuthState {
   }, [user]);
 
   const startCheckout = useCallback(async (): Promise<{ error: string | null }> => {
-    if (!session) return { error: 'Please sign in to upgrade to Pro' };
+    if (!session?.user) return { error: 'Please sign in to upgrade to Pro' };
 
-    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-create-bill`;
     const returnUrl = `${window.location.origin}/payment-success`;
+    const callbackUrl = `${window.location.origin}/api/toyyibpay-callback`;
 
-    try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ returnUrl }),
-      });
+    const result = await createBill({
+      userId: session.user.id,
+      userEmail: session.user.email ?? '',
+      returnUrl,
+      callbackUrl,
+    });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        let errBody: { error?: string } = {};
-        try { errBody = JSON.parse(errText); } catch { /* not JSON */ }
-        console.error('[startCheckout] Edge function error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errText,
-        });
-        return { error: errBody.error ?? `Checkout failed (HTTP ${response.status})` };
-      }
-
-      const data = await response.json();
-      const billCode: string | undefined = data.billCode;
-      if (!billCode) {
-        console.error('[startCheckout] No billCode in response:', data);
-        return { error: 'ToyyibPay did not return a bill code. Please try again.' };
-      }
-
-      window.location.href = `https://toyyibpay.com/${billCode}`;
-      return { error: null };
-    } catch (err) {
-      console.error('[startCheckout] Network/fetch error:', err);
-      return { error: 'Network error — could not reach the checkout service. Please check your connection and try again.' };
+    if ('error' in result) {
+      console.error('[startCheckout] createBill error:', result);
+      return { error: result.error };
     }
+
+    // Store the billCode in the transactions table
+    const { error: insertError } = await supabase
+      .from('transactions')
+      .insert({
+        bill_code: result.billCode,
+        bill_amount: 1500,
+        status: 'pending',
+      });
+    if (insertError) {
+      console.error('[startCheckout] Failed to store transaction:', insertError.message);
+    }
+
+    window.location.href = `https://toyyibpay.com/${result.billCode}`;
+    return { error: null };
   }, [session]);
 
   const verifyPayment = useCallback(async (
@@ -153,40 +145,32 @@ export function useAuth(): AuthState {
   ): Promise<{ status: string; isPro: boolean } | null> => {
     if (!session) return null;
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/toyyibpay-verify`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ billCode }),
-        },
-      );
+    const result = await verifyBill(billCode);
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('[verifyPayment] Edge function error:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errText,
-        });
-        return null;
-      }
-
-      const result = await response.json();
-
-      if (result.isPro) {
-        if (user) await loadProfile(user.id);
-      }
-
-      return { status: result.status ?? 'pending', isPro: result.isPro ?? false };
-    } catch (err) {
-      console.error('[verifyPayment] Network/fetch error:', err);
+    if ('error' in result) {
+      console.error('[verifyPayment] verifyBill error:', result);
       return null;
     }
+
+    if (result.isPro && user) {
+      // Update profile locally and in the database
+      const { error: profileError } = await supabase
+        .from('student_profiles')
+        .update({ is_pro: true, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+      if (profileError) {
+        console.error('[verifyPayment] Failed to update profile:', profileError.message);
+      }
+      await loadProfile(user.id);
+
+      // Update transaction status
+      await supabase
+        .from('transactions')
+        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .eq('bill_code', billCode);
+    }
+
+    return { status: result.status, isPro: result.isPro };
   }, [session, user]);
 
   return {
