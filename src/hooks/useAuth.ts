@@ -115,6 +115,7 @@ export function useAuth(): AuthState {
     const result = await createBill({
       userId: session.user.id,
       userEmail: session.user.email ?? '',
+      userFullName: profile?.full_name ?? '',
       returnUrl,
       callbackUrl,
     });
@@ -138,7 +139,7 @@ export function useAuth(): AuthState {
 
     window.location.href = `https://toyyibpay.com/${result.billCode}`;
     return { error: null };
-  }, [session]);
+  }, [session, profile]);
 
   const verifyPayment = useCallback(async (
     billCode: string,

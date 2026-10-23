@@ -31,11 +31,14 @@ function getCredentials(): { secretKey: string; categoryCode: string } | ToyyibP
 export async function createBill(params: {
   userId: string;
   userEmail: string;
+  userFullName: string;
   returnUrl: string;
   callbackUrl: string;
 }): Promise<CreateBillResult | ToyyibPayError> {
   const creds = getCredentials();
   if ('error' in creds) return creds;
+
+  const payorName = params.userFullName || params.userEmail.split('@')[0];
 
   const formData = new FormData();
   formData.append('userSecretKey', creds.secretKey);
@@ -51,9 +54,9 @@ export async function createBill(params: {
   formData.append('billReturnUrl', params.returnUrl);
   formData.append('billCallbackUrl', params.callbackUrl);
   formData.append('billExternalReferenceNo', params.userId);
-  formData.append('billTo', params.userEmail);
-  formData.append('billEmail', params.userEmail);
-  formData.append('billPhone', '0123456789');
+  formData.append('billPayorName', payorName);
+  formData.append('billPayorEmail', params.userEmail);
+  formData.append('billPayorPhone', '0123456789');
   formData.append('billSplitPaymentArgs', '');
   formData.append('billPaymentChannel', '0');
   formData.append('billContentFields', '');
