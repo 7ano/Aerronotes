@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Mail, Lock, User, IdCard, Loader2, GraduationCap, AlertCircle } from 'lucide-react';
 
 interface AuthModalProps {
@@ -11,6 +12,7 @@ interface AuthModalProps {
 type Mode = 'signin' | 'signup';
 
 export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthModalProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,12 +48,12 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
       onClose();
     } else {
       if (!fullName.trim() || !studentId.trim()) {
-        setError('Please fill in all fields');
+        setError(t('auth.fillAllFields'));
         setLoading(false);
         return;
       }
       if (password.length < 6) {
-        setError('Password must be at least 6 characters');
+        setError(t('auth.passwordTooShort'));
         setLoading(false);
         return;
       }
@@ -90,12 +92,10 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
           <h2 className="mt-3 text-xl font-bold text-white">
-            {mode === 'signin' ? 'Welcome Back' : 'Create Student Account'}
+            {mode === 'signin' ? t('auth.welcomeBack') : t('auth.createStudentAccount')}
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            {mode === 'signin'
-              ? 'Sign in to MIAT Central with your UniKL student email'
-              : 'Sign up with your UniKL MIAT student email'}
+            {mode === 'signin' ? t('auth.signInSubtitle') : t('auth.signUpSubtitle')}
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
                   type="text"
                   value={fullName}
                   onChange={e => { setFullName(e.target.value); setError(null); }}
-                  placeholder="Full Name"
+                  placeholder={t('auth.fullNamePlaceholder')}
                   className="w-full rounded-xl border border-slate-700/60 bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
                 />
               </div>
@@ -119,7 +119,7 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
                   type="text"
                   value={studentId}
                   onChange={e => { setStudentId(e.target.value); setError(null); }}
-                  placeholder="Student ID (e.g. 521xxxxxx)"
+                  placeholder={t('auth.studentIdPlaceholder')}
                   className="w-full rounded-xl border border-slate-700/60 bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
                 />
               </div>
@@ -132,7 +132,7 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
               type="email"
               value={email}
               onChange={e => { setEmail(e.target.value); setError(null); }}
-              placeholder="username@s.unikl.edu.my"
+              placeholder={t('auth.emailPlaceholder')}
               className="w-full rounded-xl border border-slate-700/60 bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
             />
           </div>
@@ -143,14 +143,14 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
               type="password"
               value={password}
               onChange={e => { setPassword(e.target.value); setError(null); }}
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               className="w-full rounded-xl border border-slate-700/60 bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
             />
           </div>
 
           {mode === 'signup' && (
             <p className="rounded-lg border border-sky-800/40 bg-sky-950/20 px-3 py-2 text-xs text-sky-300/80">
-              Only @s.unikl.edu.my emails are accepted.
+              {t('auth.uniklEmailOnly')}
             </p>
           )}
 
@@ -167,21 +167,21 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-amber-500 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:shadow-sky-500/40 disabled:opacity-50"
           >
             {loading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> {mode === 'signin' ? 'Signing in...' : 'Creating account...'}</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> {mode === 'signin' ? t('auth.signingIn') : t('auth.creatingAccount')}</>
             ) : (
-              mode === 'signin' ? 'Sign In' : 'Create Account'
+              mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')
             )}
           </button>
 
           {/* Mode switch */}
           <p className="pt-1 text-center text-xs text-slate-400">
-            {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+            {mode === 'signin' ? t('auth.noAccount') + ' ' : t('auth.haveAccount') + ' '}
             <button
               type="button"
               onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
               className="font-semibold text-sky-400 transition hover:text-sky-300"
             >
-              {mode === 'signin' ? 'Sign up' : 'Sign in'}
+              {mode === 'signin' ? t('auth.signUp') : t('auth.signInLink')}
             </button>
           </p>
         </form>

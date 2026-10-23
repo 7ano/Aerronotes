@@ -1,19 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown, LogOut } from 'lucide-react';
 import type { StudentProfile } from '@/types';
+import LanguageSelector from '@/components/LanguageSelector';
 
 export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes';
 
 export interface TabConfig {
   id: TabId;
-  label: string;
+  labelKey: string;
   icon: typeof Plane;
 }
 
 export const tabs: TabConfig[] = [
-  { id: 'resources', label: 'Resource Hub', icon: FileText },
-  { id: 'quiz', label: 'EASA Quiz', icon: Brain },
-  { id: 'formulas', label: 'Formulas & Acronyms', icon: Sigma },
-  { id: 'notes', label: 'Submit Notes', icon: PenLine },
+  { id: 'resources', labelKey: 'nav.resourceHub', icon: FileText },
+  { id: 'quiz', labelKey: 'nav.easaQuiz', icon: Brain },
+  { id: 'formulas', labelKey: 'nav.formulas', icon: Sigma },
+  { id: 'notes', labelKey: 'nav.notes', icon: PenLine },
 ];
 
 interface HeaderProps {
@@ -39,6 +41,8 @@ function initials(name: string): string {
 export default function Header({
   activeTab, onTabChange, isPro, onUpgradeClick, profile, onSignInClick, onSignOut,
 }: HeaderProps) {
+  const { t } = useTranslation();
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -49,20 +53,23 @@ export default function Header({
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-white">
-                MIAT Central
+                {t('header.appName')}
               </h1>
               <p className="text-[11px] font-medium text-slate-400">
-                AeroNotes for Aircraft Engineering
+                {t('header.appTagline')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language selector */}
+            <LanguageSelector />
+
             {/* Pro badge / upgrade button */}
             {isPro ? (
               <span className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300">
                 <Crown className="h-3.5 w-3.5" />
-                Pro
+                {t('header.pro')}
               </span>
             ) : profile ? (
               <button
@@ -70,7 +77,7 @@ export default function Header({
                 className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/20"
               >
                 <Crown className="h-3.5 w-3.5" />
-                Upgrade
+                {t('header.upgrade')}
               </button>
             ) : null}
 
@@ -98,7 +105,7 @@ export default function Header({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
                     >
                       <LogOut className="h-4 w-4" />
-                      Sign Out
+                      {t('header.signOut')}
                     </button>
                   </div>
                 </div>
@@ -108,7 +115,7 @@ export default function Header({
                 onClick={onSignInClick}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-800"
               >
-                Sign In
+                {t('header.signIn')}
               </button>
             )}
 
@@ -128,7 +135,7 @@ export default function Header({
                     }`}
                   >
                     <Icon className={`h-4 w-4 transition-transform ${active ? 'scale-110' : ''}`} />
-                    {tab.label}
+                    {t(tab.labelKey)}
                     {active && (
                       <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-gradient-to-r from-sky-400 to-amber-400" />
                     )}
@@ -155,7 +162,7 @@ export default function Header({
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             );
           })}
@@ -172,6 +179,7 @@ export function TrackToggle({
   track: 'academic' | 'easa';
   onTrackChange: (t: 'academic' | 'easa') => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="inline-flex items-center rounded-xl border border-slate-700/60 bg-slate-900/60 p-1">
       <button
@@ -183,7 +191,7 @@ export function TrackToggle({
         }`}
       >
         <GraduationCap className="h-4 w-4" />
-        UniKL MIAT
+        {t('header.uniKlMiat')}
       </button>
       <button
         onClick={() => onTrackChange('easa')}
@@ -194,7 +202,7 @@ export function TrackToggle({
         }`}
       >
         <FileText className="h-4 w-4" />
-        EASA Part-66
+        {t('header.easaPart66')}
       </button>
     </div>
   );

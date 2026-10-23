@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header, { type TabId } from '@/components/Header';
 import ResourceHub from '@/components/ResourceHub';
 import QuizEngine from '@/components/QuizEngine';
@@ -26,6 +27,7 @@ function usePaymentReturnRoute() {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('resources');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -98,7 +100,7 @@ export default function App() {
             <div className="flex flex-col items-center gap-6">
               <Newsletter variant="compact" />
               <p className="text-xs text-slate-500 text-center">
-                MIAT Central (AeroNotes) · For UniKL MIAT students & EASA Part-66 candidates
+                {t('footer.text')}
               </p>
             </div>
           </div>
