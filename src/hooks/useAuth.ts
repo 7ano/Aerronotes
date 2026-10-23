@@ -69,26 +69,13 @@ export function useAuth(): AuthState {
       return { error: 'Please use a valid UniKL student email address (@s.unikl.edu.my).' };
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, student_id: studentId } },
     });
 
     if (error) return { error: error.message };
-
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('student_profiles')
-        .insert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          student_id: studentId,
-          is_pro: false,
-        });
-      if (profileError) return { error: profileError.message };
-    }
 
     return { error: null };
   }, []);
