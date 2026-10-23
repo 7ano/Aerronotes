@@ -27,7 +27,7 @@ export async function createBill(params: {
 
   if (!secretKey || !categoryCode) {
     return {
-      error: 'ToyyibPay credentials missing. Check VITE_TOYYIBPAY_SECRET_KEY and VITE_TOYYIBPAY_CATEGORY_CODE.',
+      error: 'ToyyibPay credentials missing. Please set VITE_TOYYIBPAY_SECRET_KEY and VITE_TOYYIBPAY_CATEGORY_CODE.',
     };
   }
 
@@ -35,7 +35,6 @@ export async function createBill(params: {
   const studentEmail = params.userEmail || 'student@s.unikl.edu.my';
   const studentPhone = params.userPhone || '0123456789';
 
-  // Use native FormData object
   const body = new FormData();
   body.append('userSecretKey', secretKey);
   body.append('categoryCode', categoryCode);
@@ -54,7 +53,7 @@ export async function createBill(params: {
   try {
     const response = await fetch(`${TOYYIBPAY_API}/createBill`, {
       method: 'POST',
-      body: body, // Send raw FormData (browser handles headers automatically)
+      body: body,
     });
 
     const text = await response.text();
@@ -83,7 +82,52 @@ export async function createBill(params: {
     return { billCode };
   } catch (err) {
     return {
-      error: `Network error: ${err instanceof Error ? err.message : String(err)}`,
+      error: `Network error contacting ToyyibPay: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+export async function verifyBill(billCode: string): Promise<VerifyBillResult | ToyyibPayError> {
+  const secretKey = import.meta.env.VITE_TOYYIBPAY_SECRET_KEY || '';
+
+  if (!secretKey) {
+    return { error: 'ToyyibPay secret key is not configured.' };
+  }
+
+  const payload = new URLSearchParams();
+  payload.append('userSecretKey', secretKey);
+  payload.append('billCode', billCode);
+
+  try {
+    const response = await fetch(`${TOYYIBPAY_API}/getBillTransactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: payload.toString(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        error: `ToyyibPay verify error (HTTP ${response.status}): ${errorText.slice(0, 300)}`,
+        status: response.status,
+      };
+    }
+
+    const transactions = await response.json();
+    const hasPaid =
+      Array.isArray(transactions) &&
+      transactions.some(
+        (t: { billpaymentStatus?: number; billStatus?: string }) =>
+          t.billpaymentStatus === 1 || t.billStatus === 'Paid',
+      );
+
+    return {
+      status: hasPaid ? 'paid' : 'pending',
+      isPro: hasPaid,
+    };
+  } catch (err) {
+    return {
+      error: `Network error verifying payment: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 }
