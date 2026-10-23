@@ -132,7 +132,7 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
               type="email"
               value={email}
               onChange={e => { setEmail(e.target.value); setError(null); }}
-              placeholder="student@student.unikl.edu.my"
+              placeholder="username@s.unikl.edu.my"
               className="w-full rounded-xl border border-slate-700/60 bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
             />
           </div>
@@ -150,7 +150,7 @@ export default function AuthModal({ open, onClose, onSignIn, onSignUp }: AuthMod
 
           {mode === 'signup' && (
             <p className="rounded-lg border border-sky-800/40 bg-sky-950/20 px-3 py-2 text-xs text-sky-300/80">
-              Only @student.unikl.edu.my emails are accepted.
+              Only @s.unikl.edu.my emails are accepted.
             </p>
           )}
 
