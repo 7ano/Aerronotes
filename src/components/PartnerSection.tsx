@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, GraduationCap, BookOpen, Send, CheckCircle2, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { sendWeb3FormEmail } from '@/lib/web3forms';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,6 +38,20 @@ export default function PartnerSection() {
         message: message.trim(),
       });
       if (insertError) throw insertError;
+
+      try {
+        await sendWeb3FormEmail({
+          subject: `AeroNotes Partner Application: ${name.trim()} (${role})`,
+          from_name: name.trim(),
+          email: email.trim(),
+          role,
+          organization: organization.trim() || 'N/A',
+          message: message.trim(),
+        });
+      } catch (emailErr) {
+        console.error('[PartnerSection] Web3Forms email failed:', emailErr);
+      }
+
       setSuccess(true);
       setName('');
       setEmail('');
@@ -46,7 +61,7 @@ export default function PartnerSection() {
       setTimeout(() => setSuccess(false), 4000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[PartnerSection] insert failed:', msg);
+      console.error('[PartnerSection] submit failed:', msg);
       setError(t('partner.errorSubmit'));
     } finally {
       setSubmitting(false);

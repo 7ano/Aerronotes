@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Send, CheckCircle2, Loader2, Mail, MapPin, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { sendWeb3FormEmail } from '@/lib/web3forms';
 
 interface ContactModalProps {
   open: boolean;
@@ -42,6 +43,19 @@ export default function ContactModal({ open, onClose }: ContactModalProps) {
         message: message.trim(),
       });
       if (insertError) throw insertError;
+
+      try {
+        await sendWeb3FormEmail({
+          subject: `AeroNotes Contact: ${subjectType} from ${name.trim()}`,
+          from_name: name.trim(),
+          email: email.trim(),
+          inquiry_type: subjectType,
+          message: message.trim(),
+        });
+      } catch (emailErr) {
+        console.error('[ContactModal] Web3Forms email failed:', emailErr);
+      }
+
       setSuccess(true);
       setName('');
       setEmail('');
@@ -50,7 +64,7 @@ export default function ContactModal({ open, onClose }: ContactModalProps) {
       setTimeout(() => { setSuccess(false); onClose(); }, 2500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[ContactModal] insert failed:', msg);
+      console.error('[ContactModal] submit failed:', msg);
       setError(t('contact.errorSubmit'));
     } finally {
       setSubmitting(false);

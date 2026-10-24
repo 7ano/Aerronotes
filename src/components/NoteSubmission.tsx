@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PenLine, Send, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
 import type { Track, NoteSubmission } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { sendWeb3FormEmail } from '@/lib/web3forms';
 import { TrackToggle } from './Header';
 
 const academicSubjects = ['Thermofluids', 'Piston Engines', 'Aircraft Structures', 'Digital Techniques'];
@@ -64,6 +65,22 @@ export default function NoteSubmission() {
         content: content.trim(),
       });
       if (insertError) throw insertError;
+
+      try {
+        await sendWeb3FormEmail({
+          subject: `AeroNotes Note Submission: ${title.trim()}`,
+          from_name: name.trim() || 'Anonymous',
+          email: 'support@aeronotes.study',
+          track,
+          track_ref: trackRef,
+          subject_area: subject,
+          note_title: title.trim(),
+          note_content: content.trim(),
+        });
+      } catch (emailErr) {
+        console.error('[NoteSubmission] Web3Forms email failed:', emailErr);
+      }
+
       setSuccess(true);
       setName('');
       setTitle('');
@@ -74,7 +91,7 @@ export default function NoteSubmission() {
       setTimeout(() => setSuccess(false), 4000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[NoteSubmission] insert failed:', msg);
+      console.error('[NoteSubmission] submit failed:', msg);
       setError(t('notes.errorSubmit'));
     } finally {
       setSubmitting(false);
