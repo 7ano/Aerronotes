@@ -5,3 +5,7 @@ entrypoint = "./functions/toyyibpay-create-bill/index.ts"
 [functions.toyyibpay-verify]
 verify_jwt = true
 entrypoint = "./functions/toyyibpay-verify/index.ts"
+
+[functions.ai-tutor]
+verify_jwt = true
+entrypoint = "./functions/ai-tutor/index.ts"

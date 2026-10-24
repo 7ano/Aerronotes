@@ -8,6 +8,10 @@
     "toyyibpay-verify": {
       "hasChanged": false,
       "hash": "7ada6a98ccf6f905d2c1bb05dc3a5abe990eb4fa65cddab2b03b96dc39d6980f"
+    },
+    "ai-tutor": {
+      "hasChanged": false,
+      "hash": "947cdc5d8b785a793b54f95173c706e4e9191dea5cd9e5a1278261f2517e54be"
     }
   }
 }

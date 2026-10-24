@@ -11,6 +11,8 @@ import AuthModal from '@/components/AuthModal';
 import ContactModal from '@/components/ContactModal';
 import PartnerSection from '@/components/PartnerSection';
 import AdminPanel from '@/components/AdminPanel';
+import AiTutorPage from '@/pages/AiTutor';
+import AiChatWidget from '@/components/AiChatWidget';
 import PaymentSuccessPage from '@/pages/PaymentSuccess';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -25,6 +27,7 @@ export default function App() {
   const route = useMemo(() => window.location.pathname, []);
   const isAdminRoute = route === '/admin';
   const isPaymentSuccess = route === '/payment-success';
+  const isAiTutorRoute = route === '/ai-tutor';
 
   if (isPaymentSuccess) {
     return <PaymentSuccessPage />;
@@ -38,6 +41,31 @@ export default function App() {
         loading={loading}
         onBackToApp={() => { window.location.pathname = '/'; }}
       />
+    );
+  }
+
+  if (isAiTutorRoute) {
+    return (
+      <>
+        <AiTutorPage
+          isPro={isPro}
+          onUpgradeClick={() => setUpgradeOpen(true)}
+          onSignInRequired={() => setAuthOpen(true)}
+          onBackToApp={() => { window.location.pathname = '/'; }}
+        />
+        <AuthModal
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          onSignIn={signIn}
+          onSignUp={signUp}
+        />
+        <ProUpgradeModal
+          open={upgradeOpen}
+          onClose={() => setUpgradeOpen(false)}
+          isPro={isPro}
+          userEmail={profile?.email ?? null}
+        />
+      </>
     );
   }
 
@@ -105,6 +133,12 @@ export default function App() {
       <ContactModal
         open={contactOpen}
         onClose={() => setContactOpen(false)}
+      />
+
+      <AiChatWidget
+        isPro={isPro}
+        onUpgradeClick={() => setUpgradeOpen(true)}
+        onSignInRequired={() => setAuthOpen(true)}
       />
     </div>
   );

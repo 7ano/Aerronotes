@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown, LogOut, Mail, Users } from 'lucide-react';
+import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown, LogOut, Mail, Users, Sparkles } from 'lucide-react';
 import type { StudentProfile } from '@/types';
 import LanguageSelector from '@/components/LanguageSelector';
 
