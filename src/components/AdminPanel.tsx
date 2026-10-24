@@ -227,9 +227,9 @@ function NotesManager() {
         track_ref: trackRef,
         subject,
         title: title.trim(),
-        content: description.trim(),
-        file_url: fileUrl,
-        file_path: filePath,
+        content: description.trim() || '',
+        file_url: fileUrl || null,
+        file_path: filePath || null,
       });
 
       if (dbError) {
