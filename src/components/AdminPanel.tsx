@@ -221,23 +221,32 @@ function NotesManager() {
       const { data: urlData } = supabase.storage.from('notes').getPublicUrl(filePath);
       const fileUrl = urlData.publicUrl;
 
-      const { error: dbError } = await supabase.from('note_submissions').insert({
+      const payload: Record<string, string | null> = {
         student_name: 'Admin Upload',
         track,
         track_ref: trackRef,
         subject,
         title: title.trim(),
         content: description.trim() || '',
-        file_url: fileUrl || null,
-        file_path: filePath || null,
-      });
+      };
+      if (fileUrl) payload.file_url = fileUrl;
+      if (filePath) payload.file_path = filePath;
 
-      if (dbError) {
-        console.error('[AdminPanel] DB insert failed:', dbError.message);
-        throw new Error(dbError.message);
+      try {
+        const { error: dbError } = await supabase.from('note_submissions').insert(payload);
+        if (dbError) {
+          console.error('[AdminPanel] DB insert failed:', dbError.message);
+          setError(`File uploaded but database save failed: ${dbError.message}`);
+        } else {
+          setSuccess(`"${title.trim()}" uploaded successfully!`);
+          setTimeout(() => setSuccess(''), 4000);
+        }
+      } catch (dbErr) {
+        const dbMsg = dbErr instanceof Error ? dbErr.message : String(dbErr);
+        console.error('[AdminPanel] DB insert exception:', dbMsg);
+        setError(`File uploaded but database save failed: ${dbMsg}`);
       }
 
-      setSuccess(`"${title.trim()}" uploaded successfully!`);
       setTitle('');
       setDescription('');
       setTrackRef('');
@@ -245,7 +254,6 @@ function NotesManager() {
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadNotes();
-      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[AdminPanel] upload failed:', msg);
