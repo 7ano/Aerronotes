@@ -221,16 +221,20 @@ function NotesManager() {
       const { data: urlData } = supabase.storage.from('notes').getPublicUrl(filePath);
       const fileUrl = urlData.publicUrl;
 
-      const payload: Record<string, string | null> = {
+      const rawPayload: Record<string, string | null | undefined> = {
         student_name: 'Admin Upload',
         track,
         track_ref: trackRef,
         subject,
         title: title.trim(),
         content: description.trim() || '',
+        file_url: fileUrl || undefined,
+        file_path: filePath || undefined,
       };
-      if (fileUrl) payload.file_url = fileUrl;
-      if (filePath) payload.file_path = filePath;
+      const payload: Record<string, string | null> = {};
+      for (const [key, value] of Object.entries(rawPayload)) {
+        if (value !== undefined) payload[key] = value;
+      }
 
       try {
         const { error: dbError } = await supabase.from('note_submissions').insert(payload);
