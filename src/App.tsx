@@ -10,6 +10,7 @@ import ProUpgradeModal from '@/components/ProUpgradeModal';
 import AuthModal from '@/components/AuthModal';
 import ContactModal from '@/components/ContactModal';
 import PartnerSection from '@/components/PartnerSection';
+import AdminPanel from '@/components/AdminPanel';
 import PaymentSuccessPage from '@/pages/PaymentSuccess';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -19,14 +20,25 @@ export default function App() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const { profile, isPro, signUp, signIn, signOut } = useAuth();
+  const { profile, isPro, isAdmin, user, loading, signUp, signIn, signOut } = useAuth();
 
-  const isPaymentSuccess = useMemo(() => {
-    return window.location.pathname === '/payment-success';
-  }, []);
+  const route = useMemo(() => window.location.pathname, []);
+  const isAdminRoute = route === '/admin';
+  const isPaymentSuccess = route === '/payment-success';
 
   if (isPaymentSuccess) {
     return <PaymentSuccessPage />;
+  }
+
+  if (isAdminRoute) {
+    return (
+      <AdminPanel
+        isAdmin={isAdmin}
+        userEmail={user?.email ?? null}
+        loading={loading}
+        onBackToApp={() => { window.location.pathname = '/'; }}
+      />
+    );
   }
 
   return (

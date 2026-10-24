@@ -12,6 +12,7 @@ export interface AuthState {
   session: Session | null;
   loading: boolean;
   isPro: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, fullName: string, studentId: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -19,6 +20,8 @@ export interface AuthState {
   startCheckout: () => Promise<{ error: string | null }>;
   verifyPayment: (billCode: string) => Promise<{ status: string; isPro: boolean } | null>;
 }
+
+const ADMIN_EMAIL = 'support@aeronotes.study';
 
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
@@ -174,12 +177,16 @@ export function useAuth(): AuthState {
     return { status: result.status, isPro: result.isPro };
   }, [session, user]);
 
+  const isPro = profile?.is_pro ?? false;
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
+
   return {
     user,
     profile,
     session,
     loading,
-    isPro: profile?.is_pro ?? false,
+    isPro: isAdmin || isPro,
+    isAdmin,
     signUp,
     signIn,
     signOut,
