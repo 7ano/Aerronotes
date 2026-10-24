@@ -34,23 +34,27 @@ export default function ContactModal({ open, onClose }: ContactModalProps) {
     }
     setSubmitting(true);
     setError(null);
-    const { error: insertError } = await supabase.from('contact_submissions').insert({
-      name: name.trim(),
-      email: email.trim(),
-      subject_type: subjectType,
-      message: message.trim(),
-    });
-    setSubmitting(false);
-    if (insertError) {
+    try {
+      const { error: insertError } = await supabase.from('contact_submissions').insert({
+        name: name.trim(),
+        email: email.trim(),
+        subject_type: subjectType,
+        message: message.trim(),
+      });
+      if (insertError) throw insertError;
+      setSuccess(true);
+      setName('');
+      setEmail('');
+      setSubjectType('inquiry');
+      setMessage('');
+      setTimeout(() => { setSuccess(false); onClose(); }, 2500);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[ContactModal] insert failed:', msg);
       setError(t('contact.errorSubmit'));
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    setSuccess(true);
-    setName('');
-    setEmail('');
-    setSubjectType('inquiry');
-    setMessage('');
-    setTimeout(() => { setSuccess(false); onClose(); }, 2500);
   }
 
   const subjectOptions = [

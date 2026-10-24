@@ -54,26 +54,31 @@ export default function NoteSubmission() {
     }
     setSubmitting(true);
     setError('');
-    const { error: insertError } = await supabase.from('note_submissions').insert({
-      student_name: name.trim() || 'Anonymous',
-      track,
-      track_ref: trackRef,
-      subject,
-      title: title.trim(),
-      content: content.trim(),
-    });
-    setSubmitting(false);
-    if (insertError) {
+    try {
+      const { error: insertError } = await supabase.from('note_submissions').insert({
+        student_name: name.trim() || 'Anonymous',
+        track,
+        track_ref: trackRef,
+        subject,
+        title: title.trim(),
+        content: content.trim(),
+      });
+      if (insertError) throw insertError;
+      setSuccess(true);
+      setName('');
+      setTitle('');
+      setContent('');
+      setTrackRef('');
+      setSubject('');
+      loadRecent();
+      setTimeout(() => setSuccess(false), 4000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[NoteSubmission] insert failed:', msg);
       setError(t('notes.errorSubmit'));
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    setSuccess(true);
-    setTitle('');
-    setContent('');
-    setTrackRef('');
-    setSubject('');
-    loadRecent();
-    setTimeout(() => setSuccess(false), 4000);
   }
 
   return (

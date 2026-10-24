@@ -28,24 +28,29 @@ export default function PartnerSection() {
     }
     setSubmitting(true);
     setError(null);
-    const { error: insertError } = await supabase.from('partner_inquiries').insert({
-      name: name.trim(),
-      email: email.trim(),
-      role,
-      organization: organization.trim() || null,
-      message: message.trim(),
-    });
-    setSubmitting(false);
-    if (insertError) {
+    try {
+      const { error: insertError } = await supabase.from('partner_inquiries').insert({
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        organization: organization.trim() || null,
+        message: message.trim(),
+      });
+      if (insertError) throw insertError;
+      setSuccess(true);
+      setName('');
+      setEmail('');
+      setOrganization('');
+      setMessage('');
+      setRole('student');
+      setTimeout(() => setSuccess(false), 4000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[PartnerSection] insert failed:', msg);
       setError(t('partner.errorSubmit'));
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    setSuccess(true);
-    setName('');
-    setEmail('');
-    setOrganization('');
-    setMessage('');
-    setTimeout(() => setSuccess(false), 4000);
   }
 
   const roleOptions = [
