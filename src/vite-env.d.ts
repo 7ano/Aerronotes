@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_TOYYIBPAY_SECRET_KEY: string;
   readonly VITE_TOYYIBPAY_CATEGORY_CODE: string;
+  readonly VITE_GEMINI_API_KEY: string;
 }
 
 interface ImportMeta {

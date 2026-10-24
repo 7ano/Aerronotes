@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { askGemini, type GeminiMessage } from '@/lib/gemini';
 
 export interface ChatMessage {
   id: string;
@@ -91,52 +92,41 @@ export function useAiChat({ isPro, onUpgradeClick, onSignInRequired }: UseAiChat
     abortRef.current = controller;
 
     try {
-      const session = (await supabase.auth.getSession()).data.session;
-      const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tutor`;
+      const history: GeminiMessage[] = messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        text: m.content,
+      }));
 
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.access_token ?? ''}`,
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: JSON.stringify({
-          message: text.trim(),
-          history: messages.map(m => ({ role: m.role, content: m.content })),
-        }),
-        signal: controller.signal,
-      });
-
-      const data = await response.json();
-
-      if (response.status === 429 && data.error === 'daily_limit_reached') {
-        setLimitReached(true);
-        setRemaining(0);
-        onUpgradeClick();
-        setMessages(prev => prev.filter(m => m.id !== userMsg.id));
-        setLoading(false);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `Request failed (${response.status})`);
-      }
-
-      if (!data.response || typeof data.response !== 'string') {
-        throw new Error('Received an invalid response from the AI service.');
-      }
+      const aiText = await askGemini(text.trim(), history, controller.signal);
 
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: data.response,
+        content: aiText,
       };
       setMessages(prev => [...prev, assistantMsg]);
 
-      if (typeof data.remaining === 'number') {
-        setRemaining(data.remaining);
-        setLimitReached(data.remaining === 0);
+      // Track usage in Supabase for daily limit enforcement
+      const { error: insertError } = await supabase
+        .from('ai_queries')
+        .insert({
+          query_text: text.trim().slice(0, 5000),
+          response_text: aiText.slice(0, 10000),
+        });
+      if (insertError) {
+        console.error('[useAiChat] Failed to log query:', insertError.message);
+      }
+
+      if (!isPro) {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { count } = await supabase
+          .from('ai_queries')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', twentyFourHoursAgo);
+        const left = Math.max(0, FREE_DAILY_LIMIT - (count ?? 0));
+        setRemaining(left);
+        setLimitReached(left === 0);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
