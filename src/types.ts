@@ -40,6 +40,8 @@ export interface NoteSubmission {
   title: string;
   content: string;
   created_at: string;
+  file_url?: string | null;
+  file_path?: string | null;
 }
 
 export interface StudentProfile {

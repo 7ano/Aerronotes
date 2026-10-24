@@ -5,6 +5,7 @@ import {
   X, File, Search, Lock, Crown,
 } from 'lucide-react';
 import type { Resource, ResourceType, Track } from '@/types';
+import type { NoteSubmission } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { TrackToggle } from './Header';
 
@@ -48,9 +49,26 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const { data } = await supabase.from('resources').select('*').eq('track', track);
+      const { data } = await supabase
+        .from('note_submissions')
+        .select('*')
+        .eq('track', track)
+        .order('created_at', { ascending: false });
       if (!cancelled) {
-        setResources(data ?? []);
+        const rows: Resource[] = (data as NoteSubmission[] | null)?.map(n => ({
+          id: n.id,
+          title: n.title,
+          description: n.content || '',
+          track: n.track,
+          track_ref: n.track_ref,
+          subject: n.subject,
+          type: 'pdf_summary' as ResourceType,
+          file_url: n.file_url ?? '',
+          pages: 0,
+          is_pro: false,
+          created_at: n.created_at,
+        })) ?? [];
+        setResources(rows);
         setLoading(false);
       }
     }
@@ -190,7 +208,7 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
                 <p className="relative mt-1.5 flex-1 text-sm leading-relaxed text-slate-400">{r.description}</p>
 
                 <div className="relative mt-4 flex items-center justify-between">
-                  <span className="text-xs text-slate-500">{r.subject} · {r.pages}p</span>
+                  <span className="text-xs text-slate-500">{r.subject}{r.pages > 0 && ` · ${r.pages}p`}</span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPreview(r)}
@@ -281,7 +299,7 @@ function PreviewModal({
             <span className="rounded-md bg-slate-700/40 px-2 py-0.5 text-[11px] font-semibold text-slate-300">
               {resource.subject}
             </span>
-            <span className="text-[11px] text-slate-500">{resource.pages} {t('resources.pages')}</span>
+            <span className="text-[11px] text-slate-500">{resource.pages > 0 ? `${resource.pages} ${t('resources.pages')}` : resource.subject}</span>
           </div>
           <h3 className="text-xl font-bold text-white">{resource.title}</h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">{resource.description}</p>
