@@ -5,32 +5,26 @@ import {
   Loader2, ShieldCheck, AlertCircle, CreditCard,
 } from 'lucide-react';
 
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_dRm28t0Lj3C8fm22LW9k400';
+
 interface ProUpgradeModalProps {
   open: boolean;
   onClose: () => void;
   isPro: boolean;
   userEmail: string | null;
-  onStartCheckout: () => Promise<{ error: string | null }>;
 }
 
 export default function ProUpgradeModal({
-  open, onClose, isPro, userEmail, onStartCheckout,
+  open, onClose, isPro, userEmail,
 }: ProUpgradeModalProps) {
   const { t } = useTranslation();
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
 
   if (!open) return null;
 
-  async function handleCheckout() {
-    setError(null);
+  function handleCheckout() {
     setProcessing(true);
-    const { error: checkoutError } = await onStartCheckout();
-    setProcessing(false);
-    if (checkoutError) {
-      setError(checkoutError);
-    }
+    window.location.href = STRIPE_PAYMENT_LINK;
   }
 
   const freeFeatures = [t('pricing.freeFeatures.f1'), t('pricing.freeFeatures.f2'), t('pricing.freeFeatures.f3')];
@@ -47,10 +41,8 @@ export default function ProUpgradeModal({
         className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Glow accent */}
         <div className="absolute -top-20 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
 
-        {/* Close */}
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
@@ -58,15 +50,7 @@ export default function ProUpgradeModal({
           <X className="h-5 w-5" />
         </button>
 
-        {done ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15">
-              <ShieldCheck className="h-8 w-8 text-emerald-400" />
-            </div>
-            <h2 className="mt-4 text-xl font-bold text-white">{t('pricing.welcomePro')}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t('pricing.allUnlocked')}</p>
-          </div>
-        ) : isPro ? (
+        {isPro ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
               <Crown className="h-8 w-8 text-amber-400" />
@@ -86,9 +70,7 @@ export default function ProUpgradeModal({
               <Crown className="h-8 w-8 text-amber-400" />
             </div>
             <h2 className="mt-4 text-xl font-bold text-white">{t('pricing.signInToUpgrade')}</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              {t('pricing.signInToUpgradeDesc')}
-            </p>
+            <p className="mt-1 text-sm text-slate-400">{t('pricing.signInToUpgradeDesc')}</p>
             <button
               onClick={onClose}
               className="mt-6 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
@@ -98,21 +80,16 @@ export default function ProUpgradeModal({
           </div>
         ) : (
           <>
-            {/* Header */}
             <div className="border-b border-slate-800/60 px-8 pt-8 pb-6 text-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
                 <Sparkles className="h-3.5 w-3.5" />
                 {t('pricing.proBadge')}
               </div>
               <h2 className="mt-3 text-2xl font-bold text-white">{t('pricing.upgradeTitle')}</h2>
-              <p className="mt-1.5 text-sm text-slate-400">
-                {t('pricing.upgradeSubtitle')}
-              </p>
+              <p className="mt-1.5 text-sm text-slate-400">{t('pricing.upgradeSubtitle')}</p>
             </div>
 
-            {/* Tier cards */}
             <div className="grid gap-4 px-8 py-6 sm:grid-cols-2">
-              {/* Free Tier */}
               <div className="rounded-2xl border border-slate-700/60 bg-slate-800/30 p-5">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-slate-400" />
@@ -131,7 +108,6 @@ export default function ProUpgradeModal({
                 </ul>
               </div>
 
-              {/* Pro Tier */}
               <div className="relative rounded-2xl border border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-slate-900/40 p-5 shadow-[0_0_40px_-15px] shadow-amber-500/30">
                 <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
                 <div className="flex items-center gap-2">
@@ -156,7 +132,6 @@ export default function ProUpgradeModal({
               </div>
             </div>
 
-            {/* Feature icons row */}
             <div className="flex items-center justify-center gap-6 px-8 pb-2">
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Brain className="h-4 w-4 text-amber-400/70" /> {t('pricing.fullQuizBanks')}
@@ -169,15 +144,6 @@ export default function ProUpgradeModal({
               </div>
             </div>
 
-            {/* Error */}
-            {error && (
-              <div className="mx-8 mb-2 flex items-start gap-2 rounded-lg border border-red-800/50 bg-red-950/30 px-3 py-2.5">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                <p className="text-xs text-red-300">{error}</p>
-              </div>
-            )}
-
-            {/* Action */}
             <div className="px-8 pb-8 pt-4">
               <button
                 onClick={handleCheckout}
@@ -187,12 +153,10 @@ export default function ProUpgradeModal({
                 {processing ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> {t('pricing.redirecting')}</>
                 ) : (
-                  <><CreditCard className="h-4 w-4" /> {t('pricing.payToyyibPay')}</>
+                  <><CreditCard className="h-4 w-4" /> {t('pricing.payStripe')}</>
                 )}
               </button>
-              <p className="mt-3 text-center text-xs text-slate-500">
-                {t('pricing.securePayment')}
-              </p>
+              <p className="mt-3 text-center text-xs text-slate-500">{t('pricing.securePayment')}</p>
             </div>
           </>
         )}

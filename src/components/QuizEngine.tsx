@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Brain, CheckCircle2, XCircle, RotateCcw, ChevronRight,
   Trophy, AlertCircle, Award, Lock, Crown,
@@ -25,6 +26,7 @@ interface QuizEngineProps {
 }
 
 export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
+  const { t } = useTranslation();
   const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
@@ -99,9 +101,9 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
             {passed ? <Trophy className="h-10 w-10 text-emerald-400" /> : <AlertCircle className="h-10 w-10 text-red-400" />}
           </div>
           <h2 className="mt-5 text-2xl font-bold text-white">
-            {passed ? 'PASSED' : 'NOT YET — KEEP GOING'}
+            {passed ? t('quiz.passed') : t('quiz.notYet')}
           </h2>
-          <p className="mt-1 text-sm text-slate-400">EASA Part-66 · Module {selectedModule}</p>
+          <p className="mt-1 text-sm text-slate-400">{t('quiz.module', { module: selectedModule })}</p>
 
           <div className="mt-6 flex items-center justify-center gap-1">
             <span className={`text-5xl font-black tabular-nums ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -109,7 +111,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
             </span>
           </div>
           <p className="mt-2 text-sm text-slate-500">
-            {answers.filter(a => a.state === 'correct').length} of {answers.length} correct · Pass mark: {PASS_MARK}%
+            {t('quiz.correctOfTotal', { correct: answers.filter(a => a.state === 'correct').length, total: answers.length, passMark: PASS_MARK })}
           </p>
 
           <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-800">
@@ -120,7 +122,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
           </div>
 
           <div className="mt-7 space-y-3 text-left">
-            <h3 className="text-sm font-semibold text-slate-300">Review</h3>
+            <h3 className="text-sm font-semibold text-slate-300">{t('quiz.review')}</h3>
             {answers.map((a, i) => (
               <div
                 key={i}
@@ -134,7 +136,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
                     <p className="text-sm font-medium text-slate-200">{a.question.question}</p>
                     {a.state === 'wrong' && (
                       <p className="mt-1.5 text-xs text-slate-400">
-                        Correct answer: <span className="font-medium text-emerald-300">
+                        {t('quiz.correctAnswer')} <span className="font-medium text-emerald-300">
                           {a.question[`option_${a.question.correct_answer}` as 'option_a' | 'option_b' | 'option_c']}
                         </span>
                       </p>
@@ -151,7 +153,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-amber-400"
           >
             <RotateCcw className="h-4 w-4" />
-            Back to Modules
+            {t('quiz.backToModules')}
           </button>
         </div>
       </div>
@@ -177,14 +179,14 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
               {selectedModule}
             </span>
             <span className="text-sm text-slate-400">
-              Question {currentIdx + 1} of {quizQs.length}
+              {t('quiz.question', { current: currentIdx + 1, total: quizQs.length })}
             </span>
           </div>
           <button
             onClick={restart}
             className="text-sm text-slate-400 transition hover:text-slate-200"
           >
-            Exit
+            {t('quiz.exit')}
           </button>
         </div>
 
@@ -246,7 +248,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
                   ? <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
                   : <XCircle className="h-4.5 w-4.5 text-red-400" />}
                 <span className={`text-sm font-semibold ${lastAnswer.state === 'correct' ? 'text-emerald-300' : 'text-red-300'}`}>
-                  {lastAnswer.state === 'correct' ? 'Correct!' : 'Incorrect'}
+                  {lastAnswer.state === 'correct' ? t('quiz.correct') : t('quiz.incorrect')}
                 </span>
               </div>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">{q.explanation}</p>
@@ -256,7 +258,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
 
         {isAnswered && currentIdx + 1 < quizQs.length && (
           <div className="flex justify-center text-sm text-slate-500">
-            <span className="flex items-center gap-1">Next question <ChevronRight className="h-4 w-4 animate-pulse" /></span>
+            <span className="flex items-center gap-1">{t('quiz.nextQuestion')} <ChevronRight className="h-4 w-4 animate-pulse" /></span>
           </div>
         )}
       </div>
@@ -269,10 +271,10 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
       <div>
         <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
           <Brain className="h-6 w-6 text-amber-400" />
-          EASA Part-66 Quiz Engine
+          {t('quiz.title')}
         </h2>
         <p className="mt-0.5 text-sm text-slate-400">
-          Select a module to start a practice quiz. Pass mark: 75%.
+          {t('quiz.subtitle')}
         </p>
       </div>
 
@@ -305,7 +307,7 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
                   {!locked && info.count > 0 && <Award className="h-4 w-4 text-slate-600 transition group-hover:text-amber-500/60" />}
                 </div>
                 <span className="mt-1 text-xs text-slate-500">
-                  {disabled ? 'No questions yet' : `${info.count} question${info.count !== 1 ? 's' : ''}`}
+                  {disabled ? t('quiz.noQuestions') : t('quiz.questionsCount', { count: info.count })}
                 </span>
 
                 {locked ? (
@@ -314,14 +316,14 @@ export default function QuizEngine({ isPro, onUpgradeClick }: QuizEngineProps) {
                     className="mt-2 flex items-center gap-1 text-[11px] font-medium text-amber-400 transition hover:text-amber-300"
                   >
                     <Crown className="h-3 w-3" />
-                    Upgrade to Pro to Unlock
+                    {t('quiz.upgradeToUnlock')}
                   </button>
                 ) : !disabled ? (
                   <button
                     onClick={() => startQuiz(mod)}
                     className="mt-2 flex items-center gap-1 text-[11px] font-medium text-amber-400/0 transition group-hover:text-amber-400/80"
                   >
-                    Start quiz <ChevronRight className="h-3 w-3" />
+                    {t('quiz.startQuiz')} <ChevronRight className="h-3 w-3" />
                   </button>
                 ) : null}
               </div>

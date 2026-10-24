@@ -8,60 +8,29 @@ import NoteSubmission from '@/components/NoteSubmission';
 import Newsletter from '@/components/Newsletter';
 import ProUpgradeModal from '@/components/ProUpgradeModal';
 import AuthModal from '@/components/AuthModal';
-import PaymentSuccess from '@/components/PaymentSuccess';
+import ContactModal from '@/components/ContactModal';
+import PartnerSection from '@/components/PartnerSection';
+import PaymentSuccessPage from '@/pages/PaymentSuccess';
 import { useAuth } from '@/hooks/useAuth';
-
-function usePaymentReturnRoute() {
-  const [route] = useState(() => {
-    const path = window.location.pathname;
-    if (path === '/payment-success') return 'payment-success';
-    return 'main';
-  });
-
-  const billCode = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('billcode') ?? params.get('billCode') ?? null;
-  }, []);
-
-  return { route, billCode };
-}
 
 export default function App() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('resources');
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
-  const { profile, isPro, signUp, signIn, signOut, startCheckout, verifyPayment } = useAuth();
-  const { route, billCode } = usePaymentReturnRoute();
+  const [contactOpen, setContactOpen] = useState(false);
+  const { profile, isPro, signUp, signIn, signOut } = useAuth();
 
-  function navigateToMain() {
-    window.history.pushState({}, '', '/');
-    window.location.reload();
-  }
+  const isPaymentSuccess = useMemo(() => {
+    return window.location.pathname === '/payment-success';
+  }, []);
 
-  if (route === 'payment-success') {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100">
-        <div className="pointer-events-none fixed inset-0 overflow-hidden">
-          <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-amber-500/5 blur-3xl" />
-        </div>
-        <div className="relative">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <PaymentSuccess
-              billCode={billCode}
-              isPro={isPro}
-              onVerify={verifyPayment}
-              onBack={navigateToMain}
-            />
-          </div>
-        </div>
-      </div>
-    );
+  if (isPaymentSuccess) {
+    return <PaymentSuccessPage />;
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Ambient background glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-sky-500/5 blur-3xl" />
         <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-amber-500/5 blur-3xl" />
@@ -77,6 +46,7 @@ export default function App() {
           profile={profile}
           onSignInClick={() => setAuthOpen(true)}
           onSignOut={signOut}
+          onContactClick={() => setContactOpen(true)}
         />
 
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -93,15 +63,14 @@ export default function App() {
           )}
           {activeTab === 'formulas' && <FormulaReference />}
           {activeTab === 'notes' && <NoteSubmission />}
+          {activeTab === 'partner' && <PartnerSection />}
         </main>
 
         <footer className="border-t border-slate-800/60 py-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center gap-6">
               <Newsletter variant="compact" />
-              <p className="text-xs text-slate-500 text-center">
-                {t('footer.text')}
-              </p>
+              <p className="text-center text-xs text-slate-500">{t('footer.text')}</p>
             </div>
           </div>
         </footer>
@@ -119,7 +88,11 @@ export default function App() {
         onClose={() => setUpgradeOpen(false)}
         isPro={isPro}
         userEmail={profile?.email ?? null}
-        onStartCheckout={startCheckout}
+      />
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
       />
     </div>
   );

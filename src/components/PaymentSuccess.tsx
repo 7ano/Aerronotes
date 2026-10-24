@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Loader2, XCircle, Crown } from 'lucide-react';
 
 interface PaymentSuccessProps {
@@ -11,6 +12,7 @@ interface PaymentSuccessProps {
 type VerifyState = 'verifying' | 'success' | 'pending' | 'error';
 
 export default function PaymentSuccess({ billCode, isPro, onVerify, onBack }: PaymentSuccessProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<VerifyState>('verifying');
 
   useEffect(() => {
@@ -67,9 +69,9 @@ export default function PaymentSuccess({ billCode, isPro, onVerify, onBack }: Pa
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/15">
               <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-white">Verifying Payment</h2>
+            <h2 className="mt-5 text-xl font-bold text-white">{t('payment.verifying')}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Please wait while we confirm your payment with ToyyibPay...
+              {t('payment.verifyingDesc')}
             </p>
           </>
         )}
@@ -79,19 +81,19 @@ export default function PaymentSuccess({ billCode, isPro, onVerify, onBack }: Pa
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-white">Payment Successful!</h2>
+            <h2 className="mt-5 text-xl font-bold text-white">{t('payment.success')}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Welcome to MIAT Central Pro! You now have full access to all premium content.
+              {t('payment.successDesc')}
             </p>
             <div className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2">
               <Crown className="h-4 w-4 text-amber-400" />
-              <span className="text-sm font-semibold text-amber-300">Pro Tier Activated</span>
+              <span className="text-sm font-semibold text-amber-300">{t('payment.proActivated')}</span>
             </div>
             <button
               onClick={onBack}
               className="mt-6 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 py-3 text-sm font-bold text-slate-900 transition hover:shadow-lg hover:shadow-amber-500/25"
             >
-              Start Studying
+              {t('payment.startStudying')}
             </button>
           </>
         )}
@@ -101,16 +103,15 @@ export default function PaymentSuccess({ billCode, isPro, onVerify, onBack }: Pa
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
               <Loader2 className="h-8 w-8 animate-spin text-amber-400" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-white">Payment Processing</h2>
+            <h2 className="mt-5 text-xl font-bold text-white">{t('payment.processing')}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              Your payment is still being processed. We'll check again shortly.
-              If you've completed payment, please try refreshing in a moment.
+              {t('payment.processingDesc')}
             </p>
             <button
               onClick={onBack}
               className="mt-6 w-full rounded-xl border border-slate-700/60 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
             >
-              Back to MIAT Central
+              {t('payment.backToCentral')}
             </button>
           </>
         )}
@@ -120,16 +121,15 @@ export default function PaymentSuccess({ billCode, isPro, onVerify, onBack }: Pa
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15">
               <XCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-white">Verification Issue</h2>
+            <h2 className="mt-5 text-xl font-bold text-white">{t('payment.error')}</h2>
             <p className="mt-2 text-sm text-slate-400">
-              We couldn't verify your payment at this time. If you've completed payment,
-              please contact support or try again later.
+              {t('payment.errorDesc')}
             </p>
             <button
               onClick={onBack}
               className="mt-6 w-full rounded-xl border border-slate-700/60 px-4 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800"
             >
-              Back to MIAT Central
+              {t('payment.backToCentral')}
             </button>
           </>
         )}

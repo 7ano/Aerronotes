@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Sigma, Zap, Thermometer, Wind, BookMarked } from 'lucide-react';
 import { formulas, acronyms } from '@/data/formulas';
 import type { Formula } from '@/types';
@@ -18,6 +19,7 @@ const categoryColors: Record<Formula['category'], string> = {
 };
 
 export default function FormulaReference() {
+  const { t } = useTranslation();
   const [view, setView] = useState<View>('formulas');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
@@ -66,10 +68,10 @@ export default function FormulaReference() {
         <div>
           <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
             <Sigma className="h-6 w-6 text-sky-400" />
-            Formula & Acronym Reference
+            {t('formulas.title')}
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Instant searchable equation cards and aviation acronyms
+            {t('formulas.subtitle')}
           </p>
         </div>
 
@@ -82,7 +84,7 @@ export default function FormulaReference() {
             }`}
           >
             <Zap className="h-4 w-4" />
-            Formulas
+            {t('formulas.formulas')}
           </button>
           <button
             onClick={() => switchView('acronyms')}
@@ -91,7 +93,7 @@ export default function FormulaReference() {
             }`}
           >
             <BookMarked className="h-4 w-4" />
-            Acronyms
+            {t('formulas.acronyms')}
           </button>
         </div>
       </div>
@@ -104,7 +106,7 @@ export default function FormulaReference() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={view === 'formulas' ? 'Search equations...' : 'Search acronyms...'}
+            placeholder={view === 'formulas' ? t('formulas.searchFormulas') : t('formulas.searchAcronyms')}
             className="w-full rounded-lg border border-slate-700/60 bg-slate-950/60 py-2.5 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
           />
         </div>
@@ -119,7 +121,7 @@ export default function FormulaReference() {
                   : 'bg-slate-800/40 text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
               }`}
             >
-              {cat === 'all' ? 'All' : cat}
+              {cat === 'all' ? t('formulas.all') : cat}
             </button>
           ))}
         </div>
@@ -189,7 +191,7 @@ export default function FormulaReference() {
         (view === 'acronyms' && filteredAcronyms.length === 0)) && (
         <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 py-16 text-center">
           <Search className="mx-auto h-10 w-10 text-slate-600" />
-          <p className="mt-3 text-slate-400">No results found</p>
+          <p className="mt-3 text-slate-400">{t('formulas.noResults')}</p>
         </div>
       )}
     </div>

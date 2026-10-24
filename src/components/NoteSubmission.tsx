@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PenLine, Send, CheckCircle2, Loader2, BookOpen } from 'lucide-react';
 import type { Track, NoteSubmission } from '@/types';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +13,7 @@ const easaModules = [
 ];
 
 export default function NoteSubmission() {
+  const { t } = useTranslation();
   const [track, setTrack] = useState<Track>('academic');
   const [name, setName] = useState('');
   const [trackRef, setTrackRef] = useState('');
@@ -47,7 +49,7 @@ export default function NoteSubmission() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !trackRef || !subject) {
-      setError('Please fill in all required fields.');
+      setError(t('notes.errorRequired'));
       return;
     }
     setSubmitting(true);
@@ -62,7 +64,7 @@ export default function NoteSubmission() {
     });
     setSubmitting(false);
     if (insertError) {
-      setError('Something went wrong submitting your note. Please try again.');
+      setError(t('notes.errorSubmit'));
       return;
     }
     setSuccess(true);
@@ -80,10 +82,10 @@ export default function NoteSubmission() {
         <div>
           <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
             <PenLine className="h-6 w-6 text-sky-400" />
-            Submit Your Notes
+            {t('notes.title')}
           </h2>
           <p className="mt-0.5 text-sm text-slate-400">
-            Share your study notes with fellow MIAT students
+            {t('notes.subtitle')}
           </p>
         </div>
         <TrackToggle track={track} onTrackChange={setTrack} />
@@ -99,7 +101,7 @@ export default function NoteSubmission() {
             {success && (
               <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-emerald-800/50 bg-emerald-950/30 p-3.5">
                 <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                <p className="text-sm text-emerald-300">Your notes have been submitted successfully!</p>
+                <p className="text-sm text-emerald-300">{t('notes.success')}</p>
               </div>
             )}
 
@@ -112,67 +114,67 @@ export default function NoteSubmission() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                  Your Name <span className="text-slate-500">(optional)</span>
+                  {t('notes.yourName')} <span className="text-slate-500">{t('notes.optional')}</span>
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="Anonymous"
+                  placeholder={t('notes.anonymous')}
                   className="w-full rounded-lg border border-slate-700/60 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
                 />
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                  {track === 'academic' ? 'Semester' : 'Module'} <span className="text-amber-400">*</span>
+                  {track === 'academic' ? t('notes.semester') : t('notes.module')} <span className="text-amber-400">*</span>
                 </label>
                 <select
                   value={trackRef}
                   onChange={e => setTrackRef(e.target.value)}
                   className="w-full rounded-lg border border-slate-700/60 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-200 outline-none transition focus:border-slate-600"
                 >
-                  <option value="">Select...</option>
+                  <option value="">{t('notes.select')}</option>
                   {refs.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                  Subject <span className="text-amber-400">*</span>
+                  {t('notes.subject')} <span className="text-amber-400">*</span>
                 </label>
                 <select
                   value={subject}
                   onChange={e => setSubject(e.target.value)}
                   className="w-full rounded-lg border border-slate-700/60 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-200 outline-none transition focus:border-slate-600"
                 >
-                  <option value="">Select...</option>
+                  <option value="">{t('notes.select')}</option>
                   {subjects.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                  Note Title <span className="text-amber-400">*</span>
+                  {t('notes.noteTitle')} <span className="text-amber-400">*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  placeholder="e.g. Thermodynamics Cycle Summary"
+                  placeholder={t('notes.noteTitlePlaceholder')}
                   className="w-full rounded-lg border border-slate-700/60 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-slate-300">
-                  Note Content
+                  {t('notes.noteContent')}
                 </label>
                 <textarea
                   value={content}
                   onChange={e => setContent(e.target.value)}
                   rows={6}
-                  placeholder="Write or paste your notes here..."
+                  placeholder={t('notes.noteContentPlaceholder')}
                   className="w-full resize-y rounded-lg border border-slate-700/60 bg-slate-950/60 px-3.5 py-2.5 text-sm leading-relaxed text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-slate-700/40"
                 />
               </div>
@@ -184,9 +186,9 @@ export default function NoteSubmission() {
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-sky-400 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:shadow-sky-500/40 disabled:opacity-50"
             >
               {submitting ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</>
+                <><Loader2 className="h-4 w-4 animate-spin" /> {t('notes.submitting')}</>
               ) : (
-                <><Send className="h-4 w-4" /> Submit Notes</>
+                <><Send className="h-4 w-4" /> {t('notes.submitNotes')}</>
               )}
             </button>
           </form>
@@ -197,10 +199,10 @@ export default function NoteSubmission() {
           <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 backdrop-blur-sm">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-300">
               <BookOpen className="h-4 w-4 text-slate-500" />
-              Recent Submissions
+              {t('notes.recentSubmissions')}
             </h3>
             {recent.length === 0 ? (
-              <p className="mt-4 text-sm text-slate-500">No notes submitted yet. Be the first!</p>
+              <p className="mt-4 text-sm text-slate-500">{t('notes.noNotes')}</p>
             ) : (
               <div className="mt-4 space-y-3">
                 {recent.map(n => (
@@ -220,7 +222,7 @@ export default function NoteSubmission() {
                     {n.content && (
                       <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{n.content}</p>
                     )}
-                    <p className="mt-2 text-[10px] text-slate-600">by {n.student_name}</p>
+                    <p className="mt-2 text-[10px] text-slate-600">{t('notes.by', { name: n.student_name })}</p>
                   </div>
                 ))}
               </div>
