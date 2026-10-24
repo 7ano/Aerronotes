@@ -36,25 +36,25 @@ export default function ContactModal({ open, onClose }: ContactModalProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const { error: insertError } = await supabase.from('contact_submissions').insert({
-        name: name.trim(),
-        email: email.trim(),
-        subject_type: subjectType,
-        message: message.trim(),
-      });
-      if (insertError) throw insertError;
-
       try {
-        await sendWeb3FormEmail({
-          subject: `AeroNotes Contact: ${subjectType} from ${name.trim()}`,
-          from_name: name.trim(),
+        const { error: insertError } = await supabase.from('contact_submissions').insert({
+          name: name.trim(),
           email: email.trim(),
-          inquiry_type: subjectType,
+          subject_type: subjectType,
           message: message.trim(),
         });
-      } catch (emailErr) {
-        console.error('[ContactModal] Web3Forms email failed:', emailErr);
+        if (insertError) throw insertError;
+      } catch (dbErr) {
+        console.warn('[ContactModal] DB insert failed (non-blocking):', dbErr);
       }
+
+      await sendWeb3FormEmail({
+        subject: `AeroNotes Contact: ${subjectType} from ${name.trim()}`,
+        from_name: name.trim(),
+        email: email.trim(),
+        inquiry_type: subjectType,
+        message: message.trim(),
+      });
 
       setSuccess(true);
       setName('');
@@ -64,7 +64,7 @@ export default function ContactModal({ open, onClose }: ContactModalProps) {
       setTimeout(() => { setSuccess(false); onClose(); }, 2500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[ContactModal] submit failed:', msg);
+      console.error('[ContactModal] Web3Forms email failed:', msg);
       setError(t('contact.errorSubmit'));
     } finally {
       setSubmitting(false);

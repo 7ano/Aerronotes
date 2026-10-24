@@ -30,27 +30,27 @@ export default function PartnerSection() {
     setSubmitting(true);
     setError(null);
     try {
-      const { error: insertError } = await supabase.from('partner_inquiries').insert({
-        name: name.trim(),
-        email: email.trim(),
-        role,
-        organization: organization.trim() || null,
-        message: message.trim(),
-      });
-      if (insertError) throw insertError;
-
       try {
-        await sendWeb3FormEmail({
-          subject: `AeroNotes Partner Application: ${name.trim()} (${role})`,
-          from_name: name.trim(),
+        const { error: insertError } = await supabase.from('partner_inquiries').insert({
+          name: name.trim(),
           email: email.trim(),
           role,
-          organization: organization.trim() || 'N/A',
+          organization: organization.trim() || null,
           message: message.trim(),
         });
-      } catch (emailErr) {
-        console.error('[PartnerSection] Web3Forms email failed:', emailErr);
+        if (insertError) throw insertError;
+      } catch (dbErr) {
+        console.warn('[PartnerSection] DB insert failed (non-blocking):', dbErr);
       }
+
+      await sendWeb3FormEmail({
+        subject: `AeroNotes Partner Application: ${name.trim()} (${role})`,
+        from_name: name.trim(),
+        email: email.trim(),
+        role,
+        organization: organization.trim() || 'N/A',
+        message: message.trim(),
+      });
 
       setSuccess(true);
       setName('');
@@ -61,7 +61,7 @@ export default function PartnerSection() {
       setTimeout(() => setSuccess(false), 4000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[PartnerSection] submit failed:', msg);
+      console.error('[PartnerSection] Web3Forms email failed:', msg);
       setError(t('partner.errorSubmit'));
     } finally {
       setSubmitting(false);
