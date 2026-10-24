@@ -11,7 +11,7 @@ const SYSTEM_INSTRUCTION =
   'Your expertise covers Electrical Fundamentals, Aerodynamics, Thermofluids, Gas Turbine Engines, ' +
   'Piston Engines, Aircraft Structures, and Aviation Legislation.';
 
-const MODEL = 'gemini-1.5-flash';
+const MODEL = 'gemini-2.5-flash';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 /**
