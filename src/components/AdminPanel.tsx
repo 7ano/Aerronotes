@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { NoteSubmission } from '@/types';
+import PdfPreviewModal from './PdfPreviewModal';
 
 const ADMIN_EMAIL = 'support@aeronotes.study';
 
@@ -156,6 +157,7 @@ function NotesManager() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [previewNote, setPreviewNote] = useState<NoteSubmission | null>(null);
 
   // Upload form fields
   const [title, setTitle] = useState('');
@@ -489,15 +491,13 @@ function NotesManager() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {noteRow.file_url && (
-                      <a
-                        href={noteRow.file_url}
-                        target="_blank"
-                        rel="noreferrer"
+                    {noteRow.file_path && (
+                      <button
+                        onClick={() => setPreviewNote(n)}
                         className="rounded-lg border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800/60"
                       >
                         View
-                      </a>
+                      </button>
                     )}
                     <button
                       onClick={() => handleDelete(n)}
@@ -513,6 +513,17 @@ function NotesManager() {
           </div>
         )}
       </div>
+
+      {previewNote && (
+        <PdfPreviewModal
+          title={previewNote.title}
+          subject={previewNote.subject}
+          trackRef={previewNote.track_ref}
+          filePath={previewNote.file_path ?? null}
+          onClose={() => setPreviewNote(null)}
+          onSignInRequired={() => setPreviewNote(null)}
+        />
+      )}
     </div>
   );
 }

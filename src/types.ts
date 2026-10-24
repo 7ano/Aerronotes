@@ -11,6 +11,7 @@ export interface Resource {
   subject: string;
   type: ResourceType;
   file_url: string;
+  file_path?: string | null;
   pages: number;
   is_pro: boolean;
   created_at: string;

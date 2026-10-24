@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Download, FileText, Presentation, BookOpen, FlaskConical,
-  X, File, Search, Lock, Crown,
+  File, Search, Lock, Crown, ShieldCheck,
 } from 'lucide-react';
 import type { Resource, ResourceType, Track } from '@/types';
 import type { NoteSubmission } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { TrackToggle } from './Header';
+import PdfPreviewModal from './PdfPreviewModal';
 
 const typeIcons: Record<ResourceType, typeof FileText> = {
   pdf_summary: FileText,
@@ -33,9 +34,10 @@ const easaModules = [
 interface ResourceHubProps {
   isPro: boolean;
   onUpgradeClick: () => void;
+  onSignInClick: () => void;
 }
 
-export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps) {
+export default function ResourceHub({ isPro, onUpgradeClick, onSignInClick }: ResourceHubProps) {
   const { t } = useTranslation();
   const [track, setTrack] = useState<Track>('academic');
   const [resources, setResources] = useState<Resource[]>([]);
@@ -44,6 +46,7 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [preview, setPreview] = useState<Resource | null>(null);
+  const [authPrompt, setAuthPrompt] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +67,7 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
           subject: n.subject,
           type: 'pdf_summary' as ResourceType,
           file_url: n.file_url ?? '',
+          file_path: n.file_path ?? null,
           pages: 0,
           is_pro: false,
           created_at: n.created_at,
@@ -214,7 +218,10 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
                       onClick={() => setPreview(r)}
                       className="rounded-lg border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800/60"
                     >
-                      {t('resources.preview')}
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-sky-400" />
+                        {t('resources.preview')}
+                      </span>
                     </button>
                     {locked ? (
                       <button
@@ -244,109 +251,45 @@ export default function ResourceHub({ isPro, onUpgradeClick }: ResourceHubProps)
       )}
 
       {preview && (
-        <PreviewModal resource={preview} onClose={() => setPreview(null)} isPro={isPro} onUpgradeClick={onUpgradeClick} />
+        <PdfPreviewModal
+          title={preview.title}
+          subject={preview.subject}
+          trackRef={preview.track_ref}
+          filePath={preview.file_path ?? null}
+          onClose={() => setPreview(null)}
+          onSignInRequired={() => { setPreview(null); setAuthPrompt(true); }}
+        />
       )}
-    </div>
-  );
-}
 
-function PreviewModal({
-  resource, onClose, isPro, onUpgradeClick,
-}: {
-  resource: Resource;
-  onClose: () => void;
-  isPro: boolean;
-  onUpgradeClick: () => void;
-}) {
-  const { t } = useTranslation();
-  const Icon = typeIcons[resource.type];
-  const color = typeColors[resource.type];
-  const label = typeLabel(resource.type);
-  const locked = resource.is_pro && !isPro;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900 shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-slate-800/60 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${color}`}>
-              <Icon className="h-4.5 w-4.5" />
-            </span>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{label}</span>
-            {resource.is_pro && (
-              <span className="flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                <Crown className="h-3 w-3" /> {t('header.pro')}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+      {authPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setAuthPrompt(false)}>
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" />
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900 p-6 text-center shadow-2xl"
+            onClick={e => e.stopPropagation()}
           >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-400">
-              {resource.track_ref}
-            </span>
-            <span className="rounded-md bg-slate-700/40 px-2 py-0.5 text-[11px] font-semibold text-slate-300">
-              {resource.subject}
-            </span>
-            <span className="text-[11px] text-slate-500">{resource.pages > 0 ? `${resource.pages} ${t('resources.pages')}` : resource.subject}</span>
-          </div>
-          <h3 className="text-xl font-bold text-white">{resource.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">{resource.description}</p>
-
-          <div className="mt-5 flex h-40 items-center justify-center rounded-xl border-2 border-dashed border-slate-700/60 bg-slate-950/40">
-            {locked ? (
-              <div className="text-center">
-                <Lock className="mx-auto h-10 w-10 text-amber-500/50" />
-                <p className="mt-2 text-xs text-amber-400/70">{t('resources.proContentLocked')}</p>
-              </div>
-            ) : (
-              <div className="text-center">
-                <FileText className="mx-auto h-10 w-10 text-slate-600" />
-                <p className="mt-2 text-xs text-slate-500">{t('resources.previewDesc')}</p>
-              </div>
-            )}
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/10">
+              <Lock className="h-6 w-6 text-sky-400" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold text-white">Sign in required</h3>
+            <p className="mt-2 text-sm text-slate-400">Please sign in or create a free account to view study materials.</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => setAuthPrompt(false)}
+                className="flex-1 rounded-lg border border-slate-700/60 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+              >
+                {t('pricing.close')}
+              </button>
+              <button
+                onClick={() => { setAuthPrompt(false); onSignInClick(); }}
+                className="flex-1 rounded-lg bg-gradient-to-r from-sky-500 to-amber-500 px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
+              >
+                Sign in / Sign up
+              </button>
+            </div>
           </div>
         </div>
-
-        <div className="flex justify-end gap-3 border-t border-slate-800/60 px-6 py-4">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-slate-700/60 px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
-          >
-            {t('pricing.close')}
-          </button>
-          {locked ? (
-            <button
-              onClick={onUpgradeClick}
-              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:from-amber-400 hover:to-orange-300"
-            >
-              <Crown className="h-4 w-4" />
-              {t('resources.upgradeToUnlock')}
-            </button>
-          ) : (
-            <a
-              href={resource.file_url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-white"
-            >
-              <Download className="h-4 w-4" />
-              {t('resources.download')}
-            </a>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
