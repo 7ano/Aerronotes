@@ -210,18 +210,18 @@ function NotesManager() {
 
     setUploading(true);
     try {
-      const filePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
       const { error: uploadError } = await supabase.storage
         .from('notes')
         .upload(filePath, file, { contentType: 'application/pdf' });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) throw new Error(uploadError.message);
 
       const { data: urlData } = supabase.storage.from('notes').getPublicUrl(filePath);
       const fileUrl = urlData.publicUrl;
 
-      const { error: insertError } = await supabase.from('note_submissions').insert({
+      const { error: dbError } = await supabase.from('note_submissions').insert({
         student_name: 'Admin Upload',
         track,
         track_ref: trackRef,
@@ -232,7 +232,10 @@ function NotesManager() {
         file_path: filePath,
       });
 
-      if (insertError) throw insertError;
+      if (dbError) {
+        console.error('[AdminPanel] DB insert failed:', dbError.message);
+        throw new Error(dbError.message);
+      }
 
       setSuccess(`"${title.trim()}" uploaded successfully!`);
       setTitle('');
@@ -246,7 +249,7 @@ function NotesManager() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error('[AdminPanel] upload failed:', msg);
-      setError(`Upload failed: ${msg}`);
+      setError(msg);
     } finally {
       setUploading(false);
     }
