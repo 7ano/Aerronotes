@@ -174,14 +174,17 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
         </div>
       )}
 
-      {selectedPdf && (
-        <PdfPreviewModal
-          isOpen={!!selectedPdf}
-          onClose={() => setSelectedPdf(null)}
-          fileUrl={selectedPdf.url}
-          title={selectedPdf.title}
-        />
-      )}
+    {selectedPdf && (
+  <PdfPreviewModal
+    isOpen={!!selectedPdf}
+    onClose={() => setSelectedPdf(null)}
+    fileUrl={selectedPdf.url}
+    title={selectedPdf.title}
+    isPro={selectedPdf.isPro}
+    isProUser={isProUser}
+    onOpenProModal={onOpenProModal}
+  />
+)}
     </div>
   );
 };
