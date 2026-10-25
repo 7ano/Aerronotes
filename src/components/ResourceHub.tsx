@@ -13,17 +13,41 @@ export interface ResourceItem {
 }
 
 export interface ResourceHubProps {
-  resources: ResourceItem[];
+  resources?: ResourceItem[];
   isProUser?: boolean;
   onOpenProModal?: () => void;
 }
 
+const DEFAULT_RESOURCES: ResourceItem[] = [
+  {
+    id: '1',
+    title: 'dt',
+    subject: 'Thermofluids',
+    semester: 3,
+    category: 'Mechanical',
+    fileUrl: 'https://xcjcihvopfwkjzghceev.supabase.co/storage/v1/object/public/notes/dt.pdf',
+    isPro: false,
+  },
+  {
+    id: '2',
+    title: 'e',
+    subject: 'Thermofluids',
+    semester: 2,
+    category: 'Mechanical',
+    fileUrl: 'https://xcjcihvopfwkjzghceev.supabase.co/storage/v1/object/public/notes/e.pdf',
+    isPro: true,
+  },
+];
+
 export const ResourceHub: React.FC<ResourceHubProps> = ({
-  resources = [],
+  resources = DEFAULT_RESOURCES,
   isProUser = false,
   onOpenProModal,
 }) => {
   const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
+
+  // If array is empty, fall back to default resources so cards never vanish
+  const activeResources = resources && resources.length > 0 ? resources : DEFAULT_RESOURCES;
 
   const handleDownload = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
@@ -55,8 +79,15 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {resources.map((resource) => (
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white">Resource Hub</h2>
+        <span className="text-sm text-slate-400">
+          {activeResources.length} resources available
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        {activeResources.map((resource) => (
           <div
             key={resource.id}
             className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all shadow-lg"
