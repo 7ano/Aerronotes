@@ -50,9 +50,9 @@ export default function Header({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-amber-500 shadow-lg shadow-sky-500/20">
-<img src="/LO.svg" alt="AeroNotes Logo" className="h-6 w-6 object-contain" />
-            </div>
+<div className="flex items-center justify-center">
+  <img src="/LO.svg" alt="AeroNotes Logo" className="h-8 w-auto object-contain" />
+</div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-white">{t('header.appName')}</h1>
               <p className="text-[11px] font-medium text-slate-400">{t('header.appTagline')}</p>
