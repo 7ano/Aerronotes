@@ -18,8 +18,6 @@ export interface ResourceItem {
   fileUrl?: string;
   is_pro?: boolean;
   isPro?: boolean;
-  category?: string;
-  track?: string;
 }
 
 export interface ResourceHubProps {
@@ -39,27 +37,13 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     async function fetchAdminNotes() {
       try {
         setLoading(true);
-
-        // Fetching directly from 'resources' table
-        let { data, error } = await supabase
+        const { data, error } = await supabase
           .from('resources')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error || !data || data.length === 0) {
-          const fallback = await supabase
-            .from('notes')
-            .select('*')
-            .order('created_at', { ascending: false });
-          
-          if (fallback.data && fallback.data.length > 0) {
-            data = fallback.data;
-          }
-        }
-
-        if (data) {
-          setResources(data);
-        }
+        if (error) throw error;
+        if (data) setResources(data);
       } catch (err) {
         console.error('Error fetching resources:', err);
       } finally {
@@ -70,13 +54,8 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     fetchAdminNotes();
   }, []);
 
-  const getPdfUrl = (item: ResourceItem) => {
-    return item.file_url || item.fileUrl || '';
-  };
-
-  const isItemPro = (item: ResourceItem) => {
-    return item.is_pro ?? item.isPro ?? false;
-  };
+  const getPdfUrl = (item: ResourceItem) => item.file_url || item.fileUrl || '';
+  const isItemPro = (item: ResourceItem) => item.is_pro ?? item.isPro ?? false;
 
   const handlePreview = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
@@ -132,7 +111,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
 
       {resources.length === 0 ? (
         <div className="text-center py-12 bg-slate-900/50 border border-slate-800 rounded-xl">
-          <p className="text-slate-400">No resources found yet. Upload notes in the Admin panel to populate this list.</p>
+          <p className="text-slate-400">No resources found. Upload notes in the Admin panel to populate this list.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
