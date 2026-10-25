@@ -46,11 +46,11 @@ export const AdminPanel: React.FC = () => {
     try {
       setUploading(true);
 
-      // Sanitize file name to ASCII-only format
+      // 1. Sanitize file name to ASCII-only format to avoid storage key errors
       const fileExt = file.name.split('.').pop() || 'pdf';
       const safeName = `${Date.now()}_doc.${fileExt}`;
 
-      // Upload file to Supabase Storage 'notes' bucket
+      // 2. Upload file to Supabase Storage 'notes' bucket
       const { error: storageError } = await supabase.storage
         .from('notes')
         .upload(safeName, file, {
@@ -60,18 +60,19 @@ export const AdminPanel: React.FC = () => {
 
       if (storageError) throw storageError;
 
-      // Get Public URL
+      // 3. Get Public URL
       const { data: publicUrlData } = supabase.storage
         .from('notes')
         .getPublicUrl(safeName);
 
       const fileUrl = publicUrlData.publicUrl;
 
-      // Build payload cleanly
+      // 4. Build payload with all schema columns included
       const payload: any = {
         title: title.trim(),
         subject: subject.trim() || 'General',
         file_url: fileUrl,
+        file_type: 'pdf',
         is_pro: isPro,
         track,
       };
@@ -80,7 +81,7 @@ export const AdminPanel: React.FC = () => {
       if (track === 'easa') payload.module = module.trim();
       if (description.trim()) payload.description = description.trim();
 
-      // Insert record into Supabase
+      // 5. Insert record into Supabase
       const { error: dbError } = await supabase.from('resources').insert([payload]);
 
       if (dbError) throw dbError;
