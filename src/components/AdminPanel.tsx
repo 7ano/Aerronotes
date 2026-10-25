@@ -6,11 +6,46 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Mechanical Subjects
+const MECHANICAL_SUBJECTS = [
+  'Aircraft Structures',
+  'Piston Engine 1',
+  'Thermofluid',
+  'Aviation Legislation',
+  'Engineering Ethics',
+  'Technical Drawing',
+  'Computer Programming in C',
+  'Other',
+];
+
+// EASA Modules List
+const EASA_MODULES = [
+  'M1 - Mathematics',
+  'M2 - Physics',
+  'M3 - Electrical Fundamentals',
+  'M4 - Electronic Fundamentals',
+  'M5 - Digital Techniques / Electronic Instrument Systems',
+  'M6 - Materials and Hardware',
+  'M7A - Maintenance Practices',
+  'M8 - Basic Aerodynamics',
+  'M9A - Human Factors',
+  'M10 - Aviation Legislation',
+  'M11A - Turbine Aeroplane Aerodynamics, Structures and Systems',
+  'M12 - Helicopter Aerodynamics, Structures and Systems',
+  'M13 - Aircraft Aerodynamics, Structures and Systems (Avionics)',
+  'M14 - Propulsion',
+  'M15 - Gas Turbine Engine',
+  'M16 - Piston Engine',
+  'M17A - Propeller',
+];
+
 export const AdminPanel: React.FC = () => {
   const [track, setTrack] = useState<'academic' | 'easa'>('academic');
+  const [category, setCategory] = useState<'Mechanical' | 'Avionics'>('Mechanical');
   const [semester, setSemester] = useState<number>(1);
-  const [module, setModule] = useState<string>('M1');
-  const [subject, setSubject] = useState<string>('Aircraft Structures');
+  const [module, setModule] = useState<string>(EASA_MODULES[0]);
+  const [subjectSelect, setSubjectSelect] = useState<string>(MECHANICAL_SUBJECTS[0]);
+  const [customSubject, setCustomSubject] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
@@ -38,19 +73,27 @@ export const AdminPanel: React.FC = () => {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const finalSubject = subjectSelect === 'Other' ? customSubject.trim() : subjectSelect;
+
     if (!title || !file) {
       alert('Please provide a title and select a PDF file.');
+      return;
+    }
+
+    if (track === 'academic' && !finalSubject) {
+      alert('Please specify a subject.');
       return;
     }
 
     try {
       setUploading(true);
 
-      // 1. Sanitize file name to ASCII-only format to avoid storage key errors
+      // 1. Sanitize file name to ASCII-only format
       const fileExt = file.name.split('.').pop() || 'pdf';
       const safeName = `${Date.now()}_doc.${fileExt}`;
 
-      // 2. Upload file to Supabase Storage 'notes' bucket
+      // 2. Upload to Supabase Storage
       const { error: storageError } = await supabase.storage
         .from('notes')
         .upload(safeName, file, {
@@ -60,17 +103,18 @@ export const AdminPanel: React.FC = () => {
 
       if (storageError) throw storageError;
 
-      // 3. Get Public URL
+      // 3. Obtain Public URL
       const { data: publicUrlData } = supabase.storage
         .from('notes')
         .getPublicUrl(safeName);
 
       const fileUrl = publicUrlData.publicUrl;
 
-      // 4. Build payload with all schema columns included
+      // 4. Construct payload cleanly
       const payload: any = {
         title: title.trim(),
-        subject: subject.trim() || 'General',
+        subject: track === 'academic' ? finalSubject : module,
+        category,
         file_url: fileUrl,
         file_type: 'pdf',
         is_pro: isPro,
@@ -78,7 +122,7 @@ export const AdminPanel: React.FC = () => {
       };
 
       if (track === 'academic') payload.semester = Number(semester);
-      if (track === 'easa') payload.module = module.trim();
+      if (track === 'easa') payload.module = module;
       if (description.trim()) payload.description = description.trim();
 
       // 5. Insert record into Supabase
@@ -89,6 +133,7 @@ export const AdminPanel: React.FC = () => {
       alert('Note uploaded successfully!');
       setTitle('');
       setDescription('');
+      setCustomSubject('');
       setFile(null);
       setIsPro(false);
       fetchNotes();
@@ -110,7 +155,7 @@ export const AdminPanel: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4">
       <div className="w-full max-w-5xl mx-auto">
         
-        {/* Header */}
+        {/* Admin Header */}
         <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-800">
           <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20">
             <ShieldCheck className="w-7 h-7" />
@@ -123,6 +168,8 @@ export const AdminPanel: React.FC = () => {
 
         {/* Form Container */}
         <form onSubmit={handleUpload} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8 space-y-6 shadow-xl">
+          
+          {/* Track Selection */}
           <div className="flex gap-4">
             <button
               type="button"
@@ -144,43 +191,92 @@ export const AdminPanel: React.FC = () => {
             </button>
           </div>
 
+          {/* Category Selector */}
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-2">Engineering Category *</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setCategory('Mechanical')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  category === 'Mechanical'
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Mechanical
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategory('Avionics')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  category === 'Avionics'
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
+                }`}
+              >
+                Avionics (Coming Soon)
+              </button>
+            </div>
+          </div>
+
+          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {track === 'academic' ? (
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Semester *</label>
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Semester *</label>
+                  <select
+                    value={semester}
+                    onChange={(e) => setSemester(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                      <option key={s} value={s}>Semester {s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Subject *</label>
+                  <select
+                    value={subjectSelect}
+                    onChange={(e) => setSubjectSelect(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+                  >
+                    {MECHANICAL_SUBJECTS.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {subjectSelect === 'Other' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Custom Subject Name *</label>
+                    <input
+                      type="text"
+                      value={customSubject}
+                      onChange={(e) => setCustomSubject(e.target.value)}
+                      placeholder="Enter subject name..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-slate-400 mb-1">EASA Part-66 Module *</label>
                 <select
-                  value={semester}
-                  onChange={(e) => setSemester(Number(e.target.value))}
+                  value={module}
+                  onChange={(e) => setModule(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
                 >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                    <option key={s} value={s}>Semester {s}</option>
+                  {EASA_MODULES.map((mod) => (
+                    <option key={mod} value={mod}>{mod}</option>
                   ))}
                 </select>
               </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Module *</label>
-                <input
-                  type="text"
-                  value={module}
-                  onChange={(e) => setModule(e.target.value)}
-                  placeholder="e.g. M1, M2"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
             )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Subject *</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Thermofluids, Piston Engines"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
-              />
-            </div>
           </div>
 
           <div>
@@ -189,7 +285,7 @@ export const AdminPanel: React.FC = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Thermofluids Chapter 3 Notes"
+              placeholder="e.g. Thermofluid Chapter 3 Notes"
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
             />
           </div>
@@ -259,6 +355,9 @@ export const AdminPanel: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">
+                      {n.category || 'Mechanical'}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
                       {n.semester ? `Semester ${n.semester}` : n.module || 'General'}
                     </span>
                     {n.is_pro ? (
