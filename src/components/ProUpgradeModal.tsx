@@ -10,7 +10,7 @@ interface ProUpgradeModalProps {
 }
 
 // Active Stripe Payment Link
-const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/YOUR_ACTUAL_STRIPE_LINK_HERE';
+const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/test_dRm28t0Lj3C8fm22LW9k400';
 
 export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
   open,
