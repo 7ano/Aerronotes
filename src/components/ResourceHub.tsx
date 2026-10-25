@@ -12,8 +12,8 @@ export interface ResourceItem {
   title: string;
   subject: string;
   semester: number;
-  fileUrl: string;
-  isPro?: boolean;
+  file_url: string;
+  is_pro?: boolean;
 }
 
 export interface ResourceHubProps {
@@ -30,55 +30,41 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
   const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
-    async function fetchBucketFiles() {
+    async function fetchDatabaseNotes() {
       try {
         setLoading(true);
-        const { data, error } = await supabase.storage.from('notes').list('', { limit: 100 });
+        // Fetch only records created and managed in your database
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*')
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          const mappedResources: ResourceItem[] = data
-            .filter((file) => file.name !== '.emptyFolderPlaceholder')
-            .map((file, index) => {
-              const { data: publicUrlData } = supabase.storage
-                .from('notes')
-                .getPublicUrl(file.name);
-
-              return {
-                id: file.id || String(index),
-                title: file.name.replace(/^\d+-/, '').replace(/\.pdf$/i, ''),
-                subject: 'Aircraft Avionics & Structures',
-                semester: (index % 8) + 1,
-                fileUrl: publicUrlData.publicUrl,
-                isPro: index % 2 === 1, // Alternates PRO status for demonstration
-              };
-            });
-
-          setResources(mappedResources);
+        if (data) {
+          setResources(data);
         }
       } catch (err) {
-        console.error('Error fetching files from Supabase:', err);
+        console.error('Error fetching database notes:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchBucketFiles();
+    fetchDatabaseNotes();
   }, []);
 
   const handlePreview = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
     e.stopPropagation();
-    setSelectedPdf({ url: resource.fileUrl, title: resource.title });
+    setSelectedPdf({ url: resource.file_url, title: resource.title });
   };
 
   const handleDownload = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Block non-pro users from downloading PRO files
-    if (resource.isPro && !isProUser) {
+    if (resource.is_pro && !isProUser) {
       if (onOpenProModal) {
         onOpenProModal();
       } else {
@@ -87,9 +73,8 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       return;
     }
 
-    // Direct download for authorized users
     const link = document.createElement('a');
-    link.href = resource.fileUrl;
+    link.href = resource.file_url;
     link.download = `${resource.title}.pdf`;
     link.target = '_blank';
     document.body.appendChild(link);
@@ -101,7 +86,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
         <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mb-2" />
-        <p className="text-sm">Connecting to Supabase Storage...</p>
+        <p className="text-sm">Loading notes from database...</p>
       </div>
     );
   }
@@ -110,7 +95,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">Resource Hub</h2>
-        <span className="text-sm text-slate-400">{resources.length} resources loaded</span>
+        <span className="text-sm text-slate-400">{resources.length} resources available</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -124,7 +109,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                 <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
                   Semester {resource.semester}
                 </span>
-                {resource.isPro && (
+                {resource.is_pro && (
                   <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
                     <Lock className="w-3 h-3" /> PRO
                   </span>
@@ -147,12 +132,12 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                 type="button"
                 onClick={(e) => handleDownload(e, resource)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
-                  resource.isPro && !isProUser
+                  resource.is_pro && !isProUser
                     ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
                     : 'bg-cyan-600 hover:bg-cyan-500 text-white'
                 }`}
               >
-                {resource.isPro && !isProUser ? (
+                {resource.is_pro && !isProUser ? (
                   <>
                     <Lock className="w-4 h-4" /> Unlock Pro
                   </>
