@@ -20,7 +20,6 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
   isProUser = false,
   onOpenProModal,
 }) => {
-  // Lock background scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -34,28 +33,18 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleExternalOpen = (e: React.MouseEvent) => {
+  const handleProAccessCheck = (e: React.MouseEvent) => {
     if (isPro && !isProUser) {
       e.preventDefault();
+      e.stopPropagation();
       if (onOpenProModal) {
         onOpenProModal();
       } else {
         alert('This resource is locked for Pro members. Please upgrade to access.');
       }
-      return;
+      return false;
     }
-  };
-
-  const handleDownloadClick = (e: React.MouseEvent) => {
-    if (isPro && !isProUser) {
-      e.preventDefault();
-      if (onOpenProModal) {
-        onOpenProModal();
-      } else {
-        alert('This resource is locked for Pro members. Please upgrade to download.');
-      }
-      return;
-    }
+    return true;
   };
 
   return (
@@ -78,11 +67,10 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             <a
               href={isPro && !isProUser ? '#' : fileUrl}
-              onClick={handleExternalOpen}
+              onClick={handleProAccessCheck}
               target={isPro && !isProUser ? '_self' : '_blank'}
               rel="noopener noreferrer"
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold"
-              title="Open PDF in new tab"
             >
               <ExternalLink className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline">Open Full PDF</span>
@@ -102,23 +90,23 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
           className="relative w-full flex-1 bg-slate-950 overflow-y-auto min-h-[400px] h-[70vh] sm:h-[75vh] touch-auto"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Prominent High-Visibility Watermark Overlay */}
-          <div className="absolute inset-0 pointer-events-none z-20 flex flex-col items-center justify-center opacity-30 select-none">
-            <p className="text-4xl sm:text-6xl font-black tracking-widest text-cyan-300 uppercase transform -rotate-45 drop-shadow-md">
-              AERANOTES PREVIEW
+          {/* Subtle, Clean Watermark Overlay */}
+          <div className="absolute inset-0 pointer-events-none z-20 flex flex-col items-center justify-center opacity-20 select-none">
+            <p className="text-xl sm:text-2xl font-black tracking-widest text-cyan-300 uppercase transform -rotate-12 drop-shadow-sm">
+              AERONOTES PREVIEW
             </p>
             <a
               href="https://aeronotes.study"
               target="_blank"
               rel="noopener noreferrer"
-              className="pointer-events-auto mt-4 px-4 py-1.5 bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 rounded-full text-xs sm:text-sm font-bold tracking-wider hover:bg-cyan-500/30 transition-all flex items-center gap-2 backdrop-blur-md transform -rotate-45"
+              className="pointer-events-auto mt-2 px-3 py-1 bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded-full text-xs font-semibold tracking-wider hover:bg-cyan-500/30 transition-all flex items-center gap-1.5 backdrop-blur-md transform -rotate-12"
             >
-              <Globe className="w-4 h-4" /> aeronotes.study
+              <Globe className="w-3.5 h-3.5" /> aeronotes.study
             </a>
           </div>
 
           <object
-            data={`${fileUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+            data={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
             type="application/pdf"
             className="w-full h-full min-h-[400px] border-0"
           >
@@ -147,8 +135,8 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
           <a
             href={isPro && !isProUser ? '#' : fileUrl}
-            onClick={handleDownloadClick}
-            download={`${title}.pdf`}
+            onClick={handleProAccessCheck}
+            download={isPro && !isProUser ? undefined : `${title}.pdf`}
             className={`w-full sm:w-auto ml-auto px-4 py-2 font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer ${
               isPro && !isProUser
                 ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
