@@ -46,19 +46,27 @@ export const AdminPanel: React.FC = () => {
     try {
       setUploading(true);
 
-      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      // Safe ASCII-only key generation for Supabase Storage
+      const fileExt = file.name.split('.').pop() || 'pdf';
+      const safeName = `${Date.now()}_document.${fileExt}`;
+
+      // Upload PDF file to Supabase storage 'notes' bucket
       const { error: storageError } = await supabase.storage
         .from('notes')
-        .upload(fileName, file);
+        .upload(safeName, file, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
 
       if (storageError) throw storageError;
 
       const { data: publicUrlData } = supabase.storage
         .from('notes')
-        .getPublicUrl(fileName);
+        .getPublicUrl(safeName);
 
       const fileUrl = publicUrlData.publicUrl;
 
+      // Insert record into 'resources' table
       const { error: dbError } = await supabase.from('resources').insert([
         {
           title,
