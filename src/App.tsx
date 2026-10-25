@@ -4,8 +4,8 @@ import { ResourceHub } from './components/ResourceHub';
 import { AdminPanel } from './components/AdminPanel';
 import { ProUpgradeModal } from './components/ProUpgradeModal';
 
-// Set your secret admin passkey here
-const ADMIN_PASSKEY = '1234'; 
+// Set your admin passkey here
+const ADMIN_PASSKEY = '852852';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'hub' | 'admin'>('hub');
@@ -13,7 +13,7 @@ export function App() {
   const [isProModalOpen, setIsProModalOpen] = useState(false);
   const [isProUser, setIsProUser] = useState(false);
 
-  // Check URL path on load (e.g., aeronotes.study/admin or ?admin=true)
+  // Auto-detect /admin URL or query param
   useEffect(() => {
     const path = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
@@ -41,27 +41,27 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       
-      {/* Global Navigation Bar */}
+      {/* Navigation Header */}
       <header className="w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           
-          {/* Logo */}
+          {/* Restored AeroNotes Logo Icon */}
           <div 
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-center gap-3 cursor-pointer"
             onClick={() => setActiveTab('hub')}
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-lg shadow-lg shadow-cyan-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-cyan-500/20">
               A
             </div>
             <div>
-              <span className="text-white font-black text-lg tracking-tight">AeroNotes</span>
+              <span className="text-white font-bold text-lg tracking-tight">AeroNotes</span>
               <p className="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">
                 For Aircraft Engineering
               </p>
             </div>
           </div>
 
-          {/* Center Navigation - Public only shows Resource Hub */}
+          {/* Navigation Bar */}
           <nav className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800/80">
             <button
               onClick={() => setActiveTab('hub')}
@@ -74,7 +74,7 @@ export function App() {
               <BookOpen className="w-4 h-4" /> Resource Hub
             </button>
 
-            {/* Admin tab is hidden from public view unless authenticated */}
+            {/* Admin tab shows ONLY after passkey unlock */}
             {isAdminAuthenticated && (
               <button
                 onClick={() => setActiveTab('admin')}
@@ -89,7 +89,7 @@ export function App() {
             )}
           </nav>
 
-          {/* Right Action Items */}
+          {/* Right Section */}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -111,7 +111,7 @@ export function App() {
         </div>
       </header>
 
-      {/* Main View Router */}
+      {/* Main Container */}
       <main className="flex-1">
         {activeTab === 'admin' && isAdminAuthenticated ? (
           <AdminPanel />
@@ -123,14 +123,13 @@ export function App() {
         )}
       </main>
 
-      {/* Hidden Admin Access Trigger in Footer */}
+      {/* Footer with discreet Admin lock icon */}
       <footer className="w-full border-t border-slate-800/80 bg-slate-950 py-6 px-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>AeroNotes (MIAT Central) • For UniKL MIAT students & EASA Part-66 candidates</p>
           <div className="flex items-center gap-4 text-slate-400">
             <button onClick={() => setActiveTab('hub')} className="hover:text-cyan-400 transition-colors">Hub</button>
             <button onClick={() => setIsProModalOpen(true)} className="hover:text-amber-400 transition-colors">Pro</button>
-            {/* Secret keyhole button for Admin Access */}
             <button 
               onClick={handleAdminAccess} 
               className="hover:text-slate-200 transition-colors p-1 text-slate-600"
@@ -142,7 +141,7 @@ export function App() {
         </div>
       </footer>
 
-      {/* Pro Upgrade Modal */}
+      {/* Upgrade Modal */}
       <ProUpgradeModal
         isOpen={isProModalOpen}
         onClose={() => setIsProModalOpen(false)}
