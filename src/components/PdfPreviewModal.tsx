@@ -1,88 +1,109 @@
-import React, { useEffect } from 'react';
-import { X, ShieldAlert } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Eye, Lock, ShieldCheck } from 'lucide-react';
+import { PdfPreviewModal } from './PdfPreviewModal';
 
-interface PdfPreviewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  fileUrl: string;
+interface Resource {
+  id: string;
   title: string;
+  subject: string;
+  semester: number;
+  category: 'Avionics' | 'Mechanical' | 'General';
+  fileUrl: string;
+  isPro: boolean;
 }
 
-export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
-  isOpen,
-  onClose,
-  fileUrl,
-  title,
+interface ResourceHubProps {
+  resources: Resource[];
+  isProUser: boolean;
+  onOpenProModal: () => void;
+}
+
+export const ResourceHub: React.FC<ResourceHubProps> = ({
+  resources,
+  isProUser,
+  onOpenProModal,
 }) => {
-  useEffect(() => {
-    if (!isOpen) return;
+  const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) ||
-        e.key === 'PrintScreen'
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        alert('Downloading, printing, and saving are restricted.');
-      }
-    };
+  const handleDownload = (resource: Resource) => {
+    // Prevent non-pro users from triggering direct Supabase bucket downloads
+    if (resource.isPro && !isProUser) {
+      onOpenProModal();
+      return;
+    }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    // Trigger direct download for authorized users
+    const link = document.createElement('a');
+    link.href = resource.fileUrl;
+    link.download = `${resource.title}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none print:hidden">
-      {/* Modal Card Container */}
-      <div className="relative w-full max-w-5xl h-[90vh] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex flex-col shadow-2xl">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-900/90 border-b border-slate-800 z-50">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-amber-500" />
-            <h3 className="font-semibold text-slate-100 truncate max-w-md">{title}</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+    <div className="w-full max-w-7xl mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {resources.map((resource) => (
+          <div
+            key={resource.id}
+            className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all shadow-lg"
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* PDF Viewer Container */}
-        <div 
-          className="relative flex-1 w-full h-full overflow-hidden bg-slate-950 select-none"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {/* High-Visibility Repeating Watermark Grid */}
-          <div className="absolute inset-0 z-50 pointer-events-none grid grid-cols-2 md:grid-cols-3 gap-8 p-6 items-center justify-items-center opacity-45 overflow-hidden">
-            {Array.from({ length: 9 }).map((_, idx) => (
-              <div 
-                key={idx} 
-                className="transform -rotate-25 select-none text-center pointer-events-none"
-              >
-                <p className="text-2xl md:text-3xl font-black tracking-wider uppercase text-red-600 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                  AERUNOTES
-                </p>
-                <p className="text-xs md:text-sm font-extrabold text-slate-900 bg-white/70 px-2 py-0.5 rounded shadow-sm mt-1">
-                  PREVIEW ONLY • DO NOT COPY
-                </p>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
+                  Sem {resource.semester} • {resource.category}
+                </span>
+                {resource.isPro && (
+                  <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
+                    <Lock className="w-3 h-3" /> PRO
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
+              <h4 className="text-lg font-bold text-slate-100 mb-1">{resource.title}</h4>
+              <p className="text-sm text-slate-400 mb-4">{resource.subject}</p>
+            </div>
 
-          {/* PDF Frame */}
-          <iframe
-            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            className="w-full h-full border-0 relative z-10"
-            title={title}
-          />
-        </div>
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-800/80">
+              <button
+                onClick={() => setSelectedPdf({ url: resource.fileUrl, title: resource.title })}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4" /> Preview
+              </button>
+
+              <button
+                onClick={() => handleDownload(resource)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+                  resource.isPro && !isProUser
+                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                }`}
+              >
+                {resource.isPro && !isProUser ? (
+                  <>
+                    <Lock className="w-4 h-4" /> Unlock Pro
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" /> Download
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* PDF Watermarked Preview Modal */}
+      {selectedPdf && (
+        <PdfPreviewModal
+          isOpen={!!selectedPdf}
+          onClose={() => setSelectedPdf(null)}
+          fileUrl={selectedPdf.url}
+          title={selectedPdf.title}
+        />
+      )}
     </div>
   );
 };
