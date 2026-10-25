@@ -6,19 +6,69 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Mechanical Subjects mapped strictly by Semester (1 to 8)
+// Comprehensive UniKL MIAT Subject Mapping across Semesters 1 - 8
 const MECHANICAL_SUBJECTS_BY_SEMESTER: Record<number, string[]> = {
-  1: ['Technical Drawing', 'Computer Programming in C', 'Engineering Ethics'],
-  2: ['Aviation Legislation', 'Professional Aviation English'],
-  3: ['Aircraft Structures', 'Piston Engine 1', 'Thermofluid'],
-  4: ['Digital Techniques'],
-  5: ['Aerodynamics & Propulsion', 'Aircraft Systems'],
-  6: ['Maintenance Management', 'Flight Dynamics'],
-  7: ['Avionics Fundamentals', 'Final Year Project 1'],
-  8: ['Final Year Project 2', 'Industrial Training'],
+  1: [
+    'Technical Drawing',
+    'Computer Programming in C',
+    'Engineering Ethics',
+    'Mathematics 1 / Engineering Mathematics',
+    'Engineering Physics',
+    'Workshops Practice',
+    'English for Academic Purposes',
+  ],
+  2: [
+    'Aviation Legislation',
+    'Professional Aviation English',
+    'Electrical Fundamentals',
+    'Engineering Mechanics / Statics',
+    'Material Science & Engineering',
+    'Co-Curriculum',
+  ],
+  3: [
+    'Aircraft Structures',
+    'Piston Engine 1',
+    'Thermofluid',
+    'Electronics Fundamentals',
+    'Dynamics',
+    'Tamadun Islam & Tamadun Asia (TITAS) / MPW',
+  ],
+  4: [
+    'Digital Techniques',
+    'Piston Engine 2',
+    'Fluid Mechanics',
+    'Aerodynamics 1',
+    'Hubungan Etnik / Penghayatan Etika',
+    'Engineering Statistics',
+  ],
+  5: [
+    'Turbine Engine 1',
+    'Aerodynamics 2 & Propulsion',
+    'Aircraft Systems 1',
+    'Aircraft Maintenance Management',
+    'Instrumentation & Measurements',
+  ],
+  6: [
+    'Turbine Engine 2',
+    'Aircraft Systems 2',
+    'Flight Dynamics & Control',
+    'Nondestructive Testing (NDT)',
+    'Technopreneurship',
+  ],
+  7: [
+    'Avionics Fundamentals',
+    'Final Year Project 1 (FYP 1)',
+    'Aircraft Design & Structures 2',
+    'Human Factors in Aviation',
+    'Reliability & Maintainability Engineering',
+  ],
+  8: [
+    'Final Year Project 2 (FYP 2)',
+    'Industrial Training / Internship',
+  ],
 };
 
-// EASA Modules List
+// Standard EASA Part-66 Modules List
 const EASA_MODULES = [
   'M1 - Mathematics',
   'M2 - Physics',
@@ -53,10 +103,16 @@ export const AdminPanel: React.FC = () => {
   const [uploading, setUploading] = useState<boolean>(false);
   const [notes, setNotes] = useState<any[]>([]);
 
-  // Update subject selection whenever semester changes
+  // Safely get active list of subjects for current semester
+  const availableSubjects = [
+    ...(MECHANICAL_SUBJECTS_BY_SEMESTER[semester] || []),
+    'Other',
+  ];
+
+  // Auto-reset selected subject when semester changes
   useEffect(() => {
-    const availableSubjects = MECHANICAL_SUBJECTS_BY_SEMESTER[semester] || [];
-    setSubjectSelect(availableSubjects[0] || 'Other');
+    const defaultSub = MECHANICAL_SUBJECTS_BY_SEMESTER[semester]?.[0] || 'Other';
+    setSubjectSelect(defaultSub);
   }, [semester]);
 
   const fetchNotes = async () => {
@@ -88,13 +144,14 @@ export const AdminPanel: React.FC = () => {
     }
 
     if (track === 'academic' && !finalSubject) {
-      alert('Please specify a subject.');
+      alert('Please select or specify a subject.');
       return;
     }
 
     try {
       setUploading(true);
 
+      // Safe ASCII filename sanitization
       const fileExt = file.name.split('.').pop() || 'pdf';
       const safeName = `${Date.now()}_doc.${fileExt}`;
 
@@ -151,8 +208,6 @@ export const AdminPanel: React.FC = () => {
     await supabase.from('resources').delete().eq('id', id);
     fetchNotes();
   };
-
-  const currentSubjects = [...(MECHANICAL_SUBJECTS_BY_SEMESTER[semester] || []), 'Other'];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4">
@@ -218,12 +273,12 @@ export const AdminPanel: React.FC = () => {
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
                 }`}
               >
-                Avionics (Coming Soon)
+                Avionics
               </button>
             </div>
           </div>
 
-          {/* Dynamic Form Fields */}
+          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {track === 'academic' ? (
               <>
@@ -247,7 +302,7 @@ export const AdminPanel: React.FC = () => {
                     onChange={(e) => setSubjectSelect(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
                   >
-                    {currentSubjects.map((sub) => (
+                    {availableSubjects.map((sub) => (
                       <option key={sub} value={sub}>{sub}</option>
                     ))}
                   </select>
@@ -288,7 +343,7 @@ export const AdminPanel: React.FC = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Technical Drawing Practice Sheet"
+              placeholder="e.g. Thermofluid Midterm Summary"
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
             />
           </div>
@@ -345,7 +400,7 @@ export const AdminPanel: React.FC = () => {
           </button>
         </form>
 
-        {/* Managed List */}
+        {/* Managed Notes List */}
         <h3 className="text-lg font-bold text-white mb-4">All Managed Notes ({notes.length})</h3>
         <div className="space-y-3">
           {notes.length === 0 ? (
@@ -360,4 +415,35 @@ export const AdminPanel: React.FC = () => {
                     <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">
                       {n.category || 'Mechanical'}
                     </span>
-                    <span className="text-xs px-2 py-0.5 bg-slate-800 text-slate
+                    <span className="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
+                      {n.semester ? `Semester ${n.semester}` : n.module || 'General'}
+                    </span>
+                    {n.is_pro ? (
+                      <span className="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-bold">
+                        PRO
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold">
+                        FREE
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-bold text-slate-100">{n.title}</h4>
+                  <p className="text-xs text-slate-400">{n.subject}</p>
+                </div>
+                <button
+                  onClick={() => handleDelete(n.id)}
+                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminPanel;
