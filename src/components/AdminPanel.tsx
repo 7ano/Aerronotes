@@ -6,17 +6,17 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Mechanical Subjects
-const MECHANICAL_SUBJECTS = [
-  'Aircraft Structures',
-  'Piston Engine 1',
-  'Thermofluid',
-  'Aviation Legislation',
-  'Engineering Ethics',
-  'Technical Drawing',
-  'Computer Programming in C',
-  'Other',
-];
+// Mechanical Subjects mapped strictly by Semester (1 to 8)
+const MECHANICAL_SUBJECTS_BY_SEMESTER: Record<number, string[]> = {
+  1: ['Technical Drawing', 'Computer Programming in C', 'Engineering Ethics'],
+  2: ['Aviation Legislation', 'Professional Aviation English'],
+  3: ['Aircraft Structures', 'Piston Engine 1', 'Thermofluid'],
+  4: ['Digital Techniques'],
+  5: ['Aerodynamics & Propulsion', 'Aircraft Systems'],
+  6: ['Maintenance Management', 'Flight Dynamics'],
+  7: ['Avionics Fundamentals', 'Final Year Project 1'],
+  8: ['Final Year Project 2', 'Industrial Training'],
+};
 
 // EASA Modules List
 const EASA_MODULES = [
@@ -44,7 +44,7 @@ export const AdminPanel: React.FC = () => {
   const [category, setCategory] = useState<'Mechanical' | 'Avionics'>('Mechanical');
   const [semester, setSemester] = useState<number>(1);
   const [module, setModule] = useState<string>(EASA_MODULES[0]);
-  const [subjectSelect, setSubjectSelect] = useState<string>(MECHANICAL_SUBJECTS[0]);
+  const [subjectSelect, setSubjectSelect] = useState<string>('');
   const [customSubject, setCustomSubject] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -52,6 +52,12 @@ export const AdminPanel: React.FC = () => {
   const [isPro, setIsPro] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
   const [notes, setNotes] = useState<any[]>([]);
+
+  // Update subject selection whenever semester changes
+  useEffect(() => {
+    const availableSubjects = MECHANICAL_SUBJECTS_BY_SEMESTER[semester] || [];
+    setSubjectSelect(availableSubjects[0] || 'Other');
+  }, [semester]);
 
   const fetchNotes = async () => {
     try {
@@ -89,11 +95,9 @@ export const AdminPanel: React.FC = () => {
     try {
       setUploading(true);
 
-      // 1. Sanitize file name to ASCII-only format
       const fileExt = file.name.split('.').pop() || 'pdf';
       const safeName = `${Date.now()}_doc.${fileExt}`;
 
-      // 2. Upload to Supabase Storage
       const { error: storageError } = await supabase.storage
         .from('notes')
         .upload(safeName, file, {
@@ -103,14 +107,12 @@ export const AdminPanel: React.FC = () => {
 
       if (storageError) throw storageError;
 
-      // 3. Obtain Public URL
       const { data: publicUrlData } = supabase.storage
         .from('notes')
         .getPublicUrl(safeName);
 
       const fileUrl = publicUrlData.publicUrl;
 
-      // 4. Construct payload cleanly
       const payload: any = {
         title: title.trim(),
         subject: track === 'academic' ? finalSubject : module,
@@ -125,7 +127,6 @@ export const AdminPanel: React.FC = () => {
       if (track === 'easa') payload.module = module;
       if (description.trim()) payload.description = description.trim();
 
-      // 5. Insert record into Supabase
       const { error: dbError } = await supabase.from('resources').insert([payload]);
 
       if (dbError) throw dbError;
@@ -151,11 +152,13 @@ export const AdminPanel: React.FC = () => {
     fetchNotes();
   };
 
+  const currentSubjects = [...(MECHANICAL_SUBJECTS_BY_SEMESTER[semester] || []), 'Other'];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4">
       <div className="w-full max-w-5xl mx-auto">
         
-        {/* Admin Header */}
+        {/* Header */}
         <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-800">
           <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20">
             <ShieldCheck className="w-7 h-7" />
@@ -220,7 +223,7 @@ export const AdminPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Fields */}
+          {/* Dynamic Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {track === 'academic' ? (
               <>
@@ -238,13 +241,13 @@ export const AdminPanel: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">Subject *</label>
+                  <label className="block text-xs font-medium text-slate-400 mb-1">Subject (Semester {semester}) *</label>
                   <select
                     value={subjectSelect}
                     onChange={(e) => setSubjectSelect(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
                   >
-                    {MECHANICAL_SUBJECTS.map((sub) => (
+                    {currentSubjects.map((sub) => (
                       <option key={sub} value={sub}>{sub}</option>
                     ))}
                   </select>
@@ -285,7 +288,7 @@ export const AdminPanel: React.FC = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Thermofluid Chapter 3 Notes"
+              placeholder="e.g. Technical Drawing Practice Sheet"
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-cyan-500"
             />
           </div>
@@ -357,35 +360,4 @@ export const AdminPanel: React.FC = () => {
                     <span className="text-xs px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">
                       {n.category || 'Mechanical'}
                     </span>
-                    <span className="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded">
-                      {n.semester ? `Semester ${n.semester}` : n.module || 'General'}
-                    </span>
-                    {n.is_pro ? (
-                      <span className="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-bold">
-                        PRO
-                      </span>
-                    ) : (
-                      <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold">
-                        FREE
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="font-bold text-slate-100">{n.title}</h4>
-                  <p className="text-xs text-slate-400">{n.subject}</p>
-                </div>
-                <button
-                  onClick={() => handleDelete(n.id)}
-                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default AdminPanel;
+                    <span className="text-xs px-2 py-0.5 bg-slate-800 text-slate
