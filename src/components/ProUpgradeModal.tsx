@@ -5,7 +5,7 @@ import {
   Loader2, ShieldCheck, AlertCircle, CreditCard,
 } from 'lucide-react';
 
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/5kQ0010Lo3Uoc7F0gu4gg00';
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_dRm28t0Lj3C8fm22LW9k400';
 
 interface ProUpgradeModalProps {
   open: boolean;
