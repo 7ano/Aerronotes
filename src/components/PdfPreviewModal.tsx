@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { X, ShieldAlert } from 'lucide-react';
+import { X, Download, Shield, ExternalLink } from 'lucide-react';
 
-export interface PdfPreviewModalProps {
+interface PdfPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   fileUrl: string;
@@ -14,72 +14,93 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
   fileUrl,
   title,
 }) => {
+  // Lock background scroll when modal is open
   useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) ||
-        e.key === 'PrintScreen'
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        alert('Downloading, printing, and saving are restricted.');
-      }
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none print:hidden">
-      <div className="relative w-full max-w-5xl h-[90vh] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex flex-col shadow-2xl">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 z-50 relative">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-amber-500" />
-            <h3 className="font-semibold text-slate-100 truncate max-w-md">{title}</h3>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain transition-opacity duration-200"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh] sm:max-h-[88vh] will-change-transform"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/90 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 mr-2">
+            <Shield className="w-5 h-5 text-cyan-400 shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-white truncate">{title}</h3>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer relative z-50"
-          >
-            <X className="w-6 h-6" />
-          </button>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
+              title="Open PDF in new tab"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">Open Full PDF</span>
+            </a>
+            <button
+              onClick={onClose}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* PDF Frame & Watermark Container */}
-        <div 
-          className="relative flex-1 w-full h-full overflow-hidden bg-slate-950 select-none"
-          onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
+        {/* PDF Viewer Container - Touch Scroll Enabled */}
+        <div
+          className="relative w-full flex-1 bg-slate-950 overflow-y-auto min-h-[400px] h-[70vh] sm:h-[75vh] touch-auto"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* Watermark Grid - pointer-events-none lets clicks pass straight through */}
-          <div className="absolute inset-0 z-20 pointer-events-none grid grid-cols-2 md:grid-cols-3 gap-8 p-6 items-center justify-items-center opacity-40 overflow-hidden">
-            {Array.from({ length: 9 }).map((_, idx) => (
-              <div 
-                key={idx} 
-                className="transform -rotate-25 select-none text-center pointer-events-none"
-              >
-                <p className="text-2xl md:text-3xl font-black tracking-wider uppercase text-red-600 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
-                  AERONOTES
-                </p>
-                <p className="text-xs md:text-sm font-extrabold text-slate-900 bg-white/70 px-2 py-0.5 rounded shadow-sm mt-1">
-                  PREVIEW ONLY • DO NOT COPY
-                </p>
-              </div>
-            ))}
+          {/* Watermark Overlay for AeroNotes preview security */}
+          <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-10 select-none">
+            <p className="text-3xl sm:text-5xl font-extrabold tracking-widest text-cyan-400 uppercase transform -rotate-45">
+              AeroNotes Preview
+            </p>
           </div>
 
-          <iframe
-            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            className="w-full h-full border-0 relative z-10"
-            title={title}
-          />
+          <object
+            data={`${fileUrl}#toolbar=1&navpanes=0&scrollbar=1`}
+            type="application/pdf"
+            className="w-full h-full min-h-[400px] border-0"
+          >
+            <iframe
+              src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+              className="w-full h-full min-h-[400px] border-0"
+              title={title}
+            />
+          </object>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-900/90 shrink-0 text-xs text-slate-400">
+          <span className="hidden sm:inline">Watermarked preview version</span>
+          <a
+            href={fileUrl}
+            download={`${title}.pdf`}
+            className="w-full sm:w-auto ml-auto px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> Download PDF
+          </a>
         </div>
       </div>
     </div>
