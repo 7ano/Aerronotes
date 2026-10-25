@@ -1,166 +1,101 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  X, Check, Sparkles, Crown, FileText, Brain, Download,
-  Loader2, ShieldCheck, AlertCircle, CreditCard,
-} from 'lucide-react';
-
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_dRm28t0Lj3C8fm22LW9k400';
+import React, { useEffect } from 'react';
+import { X, Check, Zap, ShieldCheck } from 'lucide-react';
 
 interface ProUpgradeModalProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  isPro: boolean;
-  userEmail: string | null;
 }
 
-export default function ProUpgradeModal({
-  open, onClose, isPro, userEmail,
-}: ProUpgradeModalProps) {
-  const { t } = useTranslation();
-  const [processing, setProcessing] = useState(false);
+// Replace this URL with your active Stripe Payment Link from your Stripe Dashboard
+const STRIPE_CHECKOUT_URL = 'https://buy.stripe.com/YOUR_ACTUAL_STRIPE_LINK_HERE';
 
-  if (!open) return null;
+export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({ isOpen, onClose }) => {
+  // Prevent body scrolling behind the modal when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
-  function handleCheckout() {
-    setProcessing(true);
-    window.location.href = STRIPE_PAYMENT_LINK;
-  }
+  if (!isOpen) return null;
 
-  const freeFeatures = [t('pricing.freeFeatures.f1'), t('pricing.freeFeatures.f2'), t('pricing.freeFeatures.f3')];
-  const proFeatures = [
-    t('pricing.proFeatures.f1'), t('pricing.proFeatures.f2'), t('pricing.proFeatures.f3'),
-    t('pricing.proFeatures.f4'), t('pricing.proFeatures.f5'), t('pricing.proFeatures.f6'),
-  ];
+  const handleUpgradeClick = () => {
+    if (STRIPE_CHECKOUT_URL.includes('YOUR_ACTUAL_STRIPE_LINK')) {
+      alert('Please set your active Stripe Payment Link in ProUpgradeModal.tsx');
+      return;
+    }
+    window.open(STRIPE_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" />
-
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto overscroll-contain transition-opacity duration-200 select-none"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+      onClick={onClose}
+    >
       <div
-        className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900 shadow-2xl"
-        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-md bg-slate-900 rounded-2xl border border-amber-500/30 p-6 shadow-2xl overflow-hidden my-auto will-change-transform"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute -top-20 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
+        {/* Glow effect */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+          className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+          aria-label="Close modal"
         >
-          <X className="h-5 w-5" />
+          <X className="w-5 h-5" />
         </button>
 
-        {isPro ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/15">
-              <Crown className="h-8 w-8 text-amber-400" />
-            </div>
-            <h2 className="mt-4 text-xl font-bold text-white">{t('pricing.alreadyPro')}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t('pricing.alreadyProDesc')}</p>
-            <button
-              onClick={onClose}
-              className="mt-6 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
-            >
-              {t('pricing.continue')}
-            </button>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4 pr-6">
+          <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-400 shrink-0">
+            <Zap className="w-6 h-6" />
           </div>
-        ) : !userEmail ? (
-          <div className="flex flex-col items-center justify-center py-20 px-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sky-500/15">
-              <Crown className="h-8 w-8 text-amber-400" />
-            </div>
-            <h2 className="mt-4 text-xl font-bold text-white">{t('pricing.signInToUpgrade')}</h2>
-            <p className="mt-1 text-sm text-slate-400">{t('pricing.signInToUpgradeDesc')}</p>
-            <button
-              onClick={onClose}
-              className="mt-6 rounded-xl bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700"
-            >
-              {t('pricing.close')}
-            </button>
+          <div>
+            <h3 className="text-xl font-bold text-white">Upgrade to Pro</h3>
+            <p className="text-xs text-amber-400/90 font-medium">Unlock full access to all notes</p>
           </div>
-        ) : (
-          <>
-            <div className="border-b border-slate-800/60 px-8 pt-8 pb-6 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
-                <Sparkles className="h-3.5 w-3.5" />
-                {t('pricing.proBadge')}
-              </div>
-              <h2 className="mt-3 text-2xl font-bold text-white">{t('pricing.upgradeTitle')}</h2>
-              <p className="mt-1.5 text-sm text-slate-400">{t('pricing.upgradeSubtitle')}</p>
-            </div>
+        </div>
 
-            <div className="grid gap-4 px-8 py-6 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-700/60 bg-slate-800/30 p-5">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-slate-400" />
-                  <h3 className="font-bold text-slate-200">{t('pricing.freeTier')}</h3>
-                </div>
-                <p className="mt-1 text-2xl font-bold text-slate-300">
-                  {t('pricing.freePrice')}<span className="text-sm font-normal text-slate-500">{t('pricing.perMonth')}</span>
-                </p>
-                <ul className="mt-4 space-y-2.5">
-                  {freeFeatures.map(f => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-slate-400">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+        {/* Features list */}
+        <div className="space-y-3 my-6">
+          {[
+            'Unlimited high-speed PDF downloads',
+            'Full access to all Pro-gated semester summaries',
+            'Watermark-free viewing & printing support',
+            'Priority support for new UniKL MIAT modules',
+          ].map((feature, i) => (
+            <div key={i} className="flex items-start gap-3 text-sm text-slate-300">
+              <div className="p-1 bg-cyan-500/10 text-cyan-400 rounded-full mt-0.5 shrink-0">
+                <Check className="w-4 h-4" />
               </div>
-
-              <div className="relative rounded-2xl border border-amber-500/40 bg-gradient-to-b from-amber-950/30 to-slate-900/40 p-5 shadow-[0_0_40px_-15px] shadow-amber-500/30">
-                <div className="absolute -top-px left-6 right-6 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
-                <div className="flex items-center gap-2">
-                  <Crown className="h-5 w-5 text-amber-400" />
-                  <h3 className="font-bold text-white">{t('pricing.proTier')}</h3>
-                  <span className="ml-auto rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-                    {t('pricing.recommended')}
-                  </span>
-                </div>
-                <p className="mt-1 text-2xl font-bold text-white">
-                  {t('pricing.proPrice')}<span className="text-sm font-normal text-slate-400">{t('pricing.perMonth')}</span>
-                  <span className="ml-2 text-sm font-normal text-slate-500">{t('pricing.orDollar')}</span>
-                </p>
-                <ul className="mt-4 space-y-2.5">
-                  {proFeatures.map(f => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-slate-200">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <span>{feature}</span>
             </div>
+          ))}
+        </div>
 
-            <div className="flex items-center justify-center gap-6 px-8 pb-2">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Brain className="h-4 w-4 text-amber-400/70" /> {t('pricing.fullQuizBanks')}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <FileText className="h-4 w-4 text-amber-400/70" /> {t('pricing.workedSolutions')}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Download className="h-4 w-4 text-amber-400/70" /> {t('pricing.pdfBundles')}
-              </div>
-            </div>
+        {/* Action Button */}
+        <button
+          onClick={handleUpgradeClick}
+          className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+        >
+          <ShieldCheck className="w-5 h-5" /> Get AeroNotes Pro Access
+        </button>
 
-            <div className="px-8 pb-8 pt-4">
-              <button
-                onClick={handleCheckout}
-                disabled={processing}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-400 py-3.5 text-sm font-bold text-slate-900 shadow-lg shadow-amber-500/25 transition hover:shadow-amber-500/50 disabled:opacity-50"
-              >
-                {processing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t('pricing.redirecting')}</>
-                ) : (
-                  <><CreditCard className="h-4 w-4" /> {t('pricing.payStripe')}</>
-                )}
-              </button>
-              <p className="mt-3 text-center text-xs text-slate-500">{t('pricing.securePayment')}</p>
-            </div>
-          </>
-        )}
+        <p className="text-center text-xs text-slate-500 mt-4">
+          Secure payment powered by Stripe. Cancel anytime.
+        </p>
       </div>
     </div>
   );
-}
+};
+
+export default ProUpgradeModal;
