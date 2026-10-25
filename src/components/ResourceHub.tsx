@@ -11,6 +11,7 @@ export interface ResourceItem {
   id: string;
   title: string;
   subject: string;
+  description?: string;
   semester?: number;
   module?: string;
   file_url?: string;
@@ -39,26 +40,28 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       try {
         setLoading(true);
 
-        // Try primary table 'notes', fallback to 'resources'
+        // Fetching directly from 'resources' table
         let { data, error } = await supabase
-          .from('notes')
+          .from('resources')
           .select('*')
           .order('created_at', { ascending: false });
 
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
           const fallback = await supabase
-            .from('resources')
+            .from('notes')
             .select('*')
             .order('created_at', { ascending: false });
-          data = fallback.data;
-          error = fallback.error;
+          
+          if (fallback.data && fallback.data.length > 0) {
+            data = fallback.data;
+          }
         }
 
         if (data) {
           setResources(data);
         }
       } catch (err) {
-        console.error('Error fetching admin notes from database:', err);
+        console.error('Error fetching resources:', err);
       } finally {
         setLoading(false);
       }
@@ -145,7 +148,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
-                      {resource.semester ? `Semester ${resource.semester}` : resource.module || 'General'}
+                      {resource.semester ? `Semester ${resource.semester}` : resource.module ? `Module ${resource.module}` : 'General'}
                     </span>
                     {proStatus && (
                       <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
