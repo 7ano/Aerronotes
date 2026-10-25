@@ -52,7 +52,7 @@ export default function Header({
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
 <div className="flex items-center justify-center">
-<img src={logoSvg} alt="AeroNotes Logo" className="h-26 w-auto object-contain" />
+<img src={logoSvg} alt="AeroNotes Logo" className="h-24 w-auto object-contain" />
 </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-white">{t('header.appName')}</h1>
