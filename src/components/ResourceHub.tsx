@@ -2,35 +2,35 @@ import React, { useState } from 'react';
 import { Download, Eye, Lock } from 'lucide-react';
 import { PdfPreviewModal } from './PdfPreviewModal';
 
-interface Resource {
+export interface ResourceItem {
   id: string;
   title: string;
   subject: string;
   semester: number;
-  category: 'Avionics' | 'Mechanical' | 'General';
+  category?: 'Avionics' | 'Mechanical' | 'General';
   fileUrl: string;
-  isPro: boolean;
+  isPro?: boolean;
 }
 
-interface ResourceHubProps {
-  resources: Resource[];
-  isProUser: boolean;
-  onOpenProModal: () => void;
+export interface ResourceHubProps {
+  resources: ResourceItem[];
+  isProUser?: boolean;
+  onOpenProModal?: () => void;
 }
 
 export const ResourceHub: React.FC<ResourceHubProps> = ({
-  resources,
-  isProUser,
+  resources = [],
+  isProUser = false,
   onOpenProModal,
 }) => {
   const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
 
-  const handleDownload = (e: React.MouseEvent, resource: Resource) => {
+  const handleDownload = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (resource.isPro && !isProUser) {
-      onOpenProModal();
+      if (onOpenProModal) onOpenProModal();
       return;
     }
 
@@ -45,10 +45,12 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
     document.body.removeChild(link);
   };
 
-  const handlePreview = (e: React.MouseEvent, resource: Resource) => {
+  const handlePreview = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
     e.stopPropagation();
-    setSelectedPdf({ url: resource.fileUrl, title: resource.title });
+    if (resource.fileUrl) {
+      setSelectedPdf({ url: resource.fileUrl, title: resource.title });
+    }
   };
 
   return (
