@@ -14,7 +14,6 @@ import AdminPanel from '@/components/AdminPanel';
 import AiTutorPage from '@/pages/AiTutor';
 import AiChatWidget from '@/components/AiChatWidget';
 import PaymentSuccessPage from '@/pages/PaymentSuccess';
-import UserProfile from '@/components/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function App() {
@@ -109,9 +108,6 @@ export default function App() {
           {activeTab === 'formulas' && <FormulaReference />}
           {activeTab === 'notes' && <NoteSubmission />}
           {activeTab === 'partner' && <PartnerSection />}
-          {activeTab === 'profile' && user && (
-            <UserProfile user={user} profile={profile} onSignOut={signOut} />
-          )}
         </main>
 
         <footer className="border-t border-slate-800/60 py-8">
