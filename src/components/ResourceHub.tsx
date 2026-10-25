@@ -16,7 +16,15 @@ export interface ResourceItem {
   isPro?: boolean;
 }
 
-export const ResourceHub: React.FC = () => {
+export interface ResourceHubProps {
+  isProUser?: boolean;
+  onOpenProModal?: () => void;
+}
+
+export const ResourceHub: React.FC<ResourceHubProps> = ({
+  isProUser = false,
+  onOpenProModal,
+}) => {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
@@ -25,7 +33,6 @@ export const ResourceHub: React.FC = () => {
     async function fetchBucketFiles() {
       try {
         setLoading(true);
-        // List files automatically inside the 'notes' bucket
         const { data, error } = await supabase.storage.from('notes').list('', { limit: 100 });
 
         if (error) throw error;
@@ -44,7 +51,7 @@ export const ResourceHub: React.FC = () => {
                 subject: 'Aircraft Avionics & Structures',
                 semester: (index % 8) + 1,
                 fileUrl: publicUrlData.publicUrl,
-                isPro: index % 2 === 1,
+                isPro: index % 2 === 1, // Alternates PRO status for demonstration
               };
             });
 
@@ -64,6 +71,30 @@ export const ResourceHub: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedPdf({ url: resource.fileUrl, title: resource.title });
+  };
+
+  const handleDownload = (e: React.MouseEvent, resource: ResourceItem) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Block non-pro users from downloading PRO files
+    if (resource.isPro && !isProUser) {
+      if (onOpenProModal) {
+        onOpenProModal();
+      } else {
+        alert('This resource is locked for Pro members. Please upgrade to download.');
+      }
+      return;
+    }
+
+    // Direct download for authorized users
+    const link = document.createElement('a');
+    link.href = resource.fileUrl;
+    link.download = `${resource.title}.pdf`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {
@@ -112,15 +143,25 @@ export const ResourceHub: React.FC = () => {
                 <Eye className="w-4 h-4" /> Preview
               </button>
 
-              <a
-                href={resource.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                download
-                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
+              <button
+                type="button"
+                onClick={(e) => handleDownload(e, resource)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
+                  resource.isPro && !isProUser
+                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
+                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                }`}
               >
-                <Download className="w-4 h-4" /> Get
-              </a>
+                {resource.isPro && !isProUser ? (
+                  <>
+                    <Lock className="w-4 h-4" /> Unlock Pro
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" /> Get
+                  </>
+                )}
+              </button>
             </div>
           </div>
         ))}
