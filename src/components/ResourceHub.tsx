@@ -1,93 +1,89 @@
-import React, { useState } from 'react';
-import { Download, Eye, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, Eye, Lock, Loader2 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import { PdfPreviewModal } from './PdfPreviewModal';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface ResourceItem {
   id: string;
   title: string;
   subject: string;
   semester: number;
-  category?: 'Avionics' | 'Mechanical' | 'General';
   fileUrl: string;
   isPro?: boolean;
 }
 
-export interface ResourceHubProps {
-  resources?: ResourceItem[];
-  isProUser?: boolean;
-  onOpenProModal?: () => void;
-}
-
-const DEFAULT_RESOURCES: ResourceItem[] = [
-  {
-    id: '1',
-    title: 'dt',
-    subject: 'Thermofluids',
-    semester: 3,
-    category: 'Mechanical',
-    fileUrl: 'https://xcjcihvopfwkjzghceev.supabase.co/storage/v1/object/public/notes/dt.pdf',
-    isPro: false,
-  },
-  {
-    id: '2',
-    title: 'e',
-    subject: 'Thermofluids',
-    semester: 2,
-    category: 'Mechanical',
-    fileUrl: 'https://xcjcihvopfwkjzghceev.supabase.co/storage/v1/object/public/notes/e.pdf',
-    isPro: true,
-  },
-];
-
-export const ResourceHub: React.FC<ResourceHubProps> = ({
-  resources = DEFAULT_RESOURCES,
-  isProUser = false,
-  onOpenProModal,
-}) => {
+export const ResourceHub: React.FC = () => {
+  const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
 
-  // If array is empty, fall back to default resources so cards never vanish
-  const activeResources = resources && resources.length > 0 ? resources : DEFAULT_RESOURCES;
+  useEffect(() => {
+    async function fetchBucketFiles() {
+      try {
+        setLoading(true);
+        // List files automatically inside the 'notes' bucket
+        const { data, error } = await supabase.storage.from('notes').list('', { limit: 100 });
 
-  const handleDownload = (e: React.MouseEvent, resource: ResourceItem) => {
-    e.preventDefault();
-    e.stopPropagation();
+        if (error) throw error;
 
-    if (resource.isPro && !isProUser) {
-      if (onOpenProModal) onOpenProModal();
-      return;
+        if (data && data.length > 0) {
+          const mappedResources: ResourceItem[] = data
+            .filter((file) => file.name !== '.emptyFolderPlaceholder')
+            .map((file, index) => {
+              const { data: publicUrlData } = supabase.storage
+                .from('notes')
+                .getPublicUrl(file.name);
+
+              return {
+                id: file.id || String(index),
+                title: file.name.replace(/^\d+-/, '').replace(/\.pdf$/i, ''),
+                subject: 'Aircraft Avionics & Structures',
+                semester: (index % 8) + 1,
+                fileUrl: publicUrlData.publicUrl,
+                isPro: index % 2 === 1,
+              };
+            });
+
+          setResources(mappedResources);
+        }
+      } catch (err) {
+        console.error('Error fetching files from Supabase:', err);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (!resource.fileUrl) return;
-
-    const link = document.createElement('a');
-    link.href = resource.fileUrl;
-    link.download = `${resource.title}.pdf`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    fetchBucketFiles();
+  }, []);
 
   const handlePreview = (e: React.MouseEvent, resource: ResourceItem) => {
     e.preventDefault();
     e.stopPropagation();
-    if (resource.fileUrl) {
-      setSelectedPdf({ url: resource.fileUrl, title: resource.title });
-    }
+    setSelectedPdf({ url: resource.fileUrl, title: resource.title });
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-500 mb-2" />
+        <p className="text-sm">Connecting to Supabase Storage...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">Resource Hub</h2>
-        <span className="text-sm text-slate-400">
-          {activeResources.length} resources available
-        </span>
+        <span className="text-sm text-slate-400">{resources.length} resources loaded</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        {activeResources.map((resource) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {resources.map((resource) => (
           <div
             key={resource.id}
             className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all shadow-lg"
@@ -103,7 +99,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   </span>
                 )}
               </div>
-              <h4 className="text-lg font-bold text-slate-100 mb-1">{resource.title}</h4>
+              <h4 className="text-lg font-bold text-slate-100 mb-1 truncate">{resource.title}</h4>
               <p className="text-sm text-slate-400 mb-4">{resource.subject}</p>
             </div>
 
@@ -116,25 +112,15 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                 <Eye className="w-4 h-4" /> Preview
               </button>
 
-              <button
-                type="button"
-                onClick={(e) => handleDownload(e, resource)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
-                  resource.isPro && !isProUser
-                    ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30'
-                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                }`}
+              <a
+                href={resource.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {resource.isPro && !isProUser ? (
-                  <>
-                    <Lock className="w-4 h-4" /> Unlock Pro
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" /> Get
-                  </>
-                )}
-              </button>
+                <Download className="w-4 h-4" /> Get
+              </a>
             </div>
           </div>
         ))}
