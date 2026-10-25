@@ -36,10 +36,9 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 select-none print:hidden">
-      {/* Modal Container */}
       <div className="relative w-full max-w-5xl h-[90vh] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex flex-col shadow-2xl">
         
-        {/* Header - High Z-index & Explicit Click Handling */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 z-50 relative">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-500" />
@@ -54,12 +53,12 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
           </button>
         </div>
 
-        {/* PDF Viewer Container */}
+        {/* PDF Frame & Watermark Container */}
         <div 
           className="relative flex-1 w-full h-full overflow-hidden bg-slate-950 select-none"
           onContextMenu={(e: React.MouseEvent) => e.preventDefault()}
         >
-          {/* Watermark Grid - Set strictly to pointer-events-none so all clicks pass directly to PDF/modal */}
+          {/* Watermark Grid - pointer-events-none lets clicks pass straight through */}
           <div className="absolute inset-0 z-20 pointer-events-none grid grid-cols-2 md:grid-cols-3 gap-8 p-6 items-center justify-items-center opacity-40 overflow-hidden">
             {Array.from({ length: 9 }).map((_, idx) => (
               <div 
@@ -76,54 +75,15 @@ export const PdfPreviewModal: React.FC<PdfPreviewModalProps> = ({
             ))}
           </div>
 
-          {/* PDF iframe */}
           <iframe
-            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0`} className="w-full h-full border-0 relative z-10" title={title} /> </div> </div> </div> ); };  export default PdfPreviewModal; ```  ---  ### 2. Update `src/components/ResourceHub.tsx`  Ensure the state handler correctly triggers both **Preview** and **Get / Download** buttons:  ```tsx import React, { useState } from 'react'; import { Download, Eye, Lock } from 'lucide-react'; import { PdfPreviewModal } from './PdfPreviewModal';  interface Resource { id: string; title: string; subject: string; semester: number; category: 'Avionics' \vert{} 'Mechanical' \vert{} 'General'; fileUrl: string; isPro: boolean; }  interface ResourceHubProps { resources: Resource[]; isProUser: boolean; onOpenProModal: () => void; }  export const ResourceHub: React.FC<ResourceHubProps> = ({ resources, isProUser, onOpenProModal, }) => { const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } \vert{} null>(null);  const handleDownload = (e: React.MouseEvent, resource: Resource) => { e.preventDefault(); e.stopPropagation();  if (resource.isPro && !isProUser) { onOpenProModal(); return; }  if (!resource.fileUrl) return;  const link = document.createElement('a'); link.href = resource.fileUrl; link.download = `${resource.title}.pdf`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+            className="w-full h-full border-0 relative z-10"
+            title={title}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  const handlePreview = (e: React.MouseEvent, resource: Resource) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedPdf({ url: resource.fileUrl, title: resource.title });
-  };
-
-  return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {resources.map((resource) => (
-          <div
-            key={resource.id}
-            className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col justify-between hover:border-slate-700 transition-all shadow-lg"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold px-2.5 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
-                  Semester {resource.semester}
-                </span>
-                {resource.isPro && (
-                  <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
-                    <Lock className="w-3 h-3" /> PRO
-                  </span>
-                )}
-              </div>
-              <h4 className="text-lg font-bold text-slate-100 mb-1">{resource.title}</h4>
-              <p className="text-sm text-slate-400 mb-4">{resource.subject}</p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-800/80">
-              <button
-                type="button"
-                onClick={(e) => handlePreview(e, resource)}
-                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors cursor-pointer"
-              >
-                <Eye className="w-4 h-4" /> Preview
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => handleDownload(e, resource)}
-                className={`flex-1 flex items-center justify-center gap-2
+export default PdfPreviewModal;
