@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Plane, GraduationCap, FileText, Brain, Sigma, PenLine, Crown, LogOut, Mail, Users, Sparkles } from 'lucide-react';
 import type { StudentProfile } from '@/types';
 import LanguageSelector from '@/components/LanguageSelector';
+import logoSvg from '../LO.svg'; // أو './LO.svg' حسب مكان وجود الملف داخل src
 
 export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes' | 'partner';
 
@@ -51,7 +52,7 @@ export default function Header({
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
 <div className="flex items-center justify-center">
-  <img src="/LO.svg" alt="AeroNotes Logo" className="h-8 w-auto object-contain" />
+<img src={logoSvg} alt="AeroNotes Logo" className="h-9 w-auto object-contain" />
 </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-white">{t('header.appName')}</h1>
