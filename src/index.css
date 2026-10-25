@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          dark: '#0A192F',
+          card: '#112240',
+          accent: '#00F2FE',
+          sky: '#38BDF8',
+          text: '#F8FAFC'
+        }
+      }
+    }
+  }
+}
