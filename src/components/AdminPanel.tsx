@@ -46,11 +46,11 @@ export const AdminPanel: React.FC = () => {
     try {
       setUploading(true);
 
-      // Safe ASCII-only key generation for Supabase Storage
+      // 1. Sanitize filename (ASCII safe to avoid "Invalid key" errors)
       const fileExt = file.name.split('.').pop() || 'pdf';
-      const safeName = `${Date.now()}_document.${fileExt}`;
+      const safeName = `${Date.now()}_doc.${fileExt}`;
 
-      // Upload PDF file to Supabase storage 'notes' bucket
+      // 2. Upload to Supabase Storage
       const { error: storageError } = await supabase.storage
         .from('notes')
         .upload(safeName, file, {
@@ -60,25 +60,30 @@ export const AdminPanel: React.FC = () => {
 
       if (storageError) throw storageError;
 
+      // 3. Obtain Public URL
       const { data: publicUrlData } = supabase.storage
         .from('notes')
         .getPublicUrl(safeName);
 
       const fileUrl = publicUrlData.publicUrl;
 
-      // Insert record into 'resources' table
-      const { error: dbError } = await supabase.from('resources').insert([
-        {
-          title,
-          subject,
-          description,
-          semester: track === 'academic' ? Number(semester) : null,
-          module: track === 'easa' ? module : null,
-          file_url: fileUrl,
-          is_pro: isPro,
-          track,
-        },
-      ]);
+      // 4. Construct payload dynamically (prevents missing column errors)
+      const payload: any = {
+        title,
+        subject,
+        semester: track === 'academic' ? Number(semester) : null,
+        module: track === 'easa' ? module : null,
+        file_url: fileUrl,
+        is_pro: isPro,
+        track,
+      };
+
+      if (description.trim()) {
+        payload.description = description;
+      }
+
+      // 5. Insert into Supabase DB
+      const { error: dbError } = await supabase.from('resources').insert([payload]);
 
       if (dbError) throw dbError;
 
@@ -105,7 +110,8 @@ export const AdminPanel: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-10 px-4">
       <div className="w-full max-w-5xl mx-auto">
-        {/* Header */}
+        
+        {/* Admin Header */}
         <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-800">
           <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20">
             <ShieldCheck className="w-7 h-7" />
