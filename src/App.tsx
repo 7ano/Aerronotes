@@ -1,154 +1,145 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Crown, Shield, Lock } from 'lucide-react';
-import { ResourceHub } from './components/ResourceHub';
-import { AdminPanel } from './components/AdminPanel';
-import { ProUpgradeModal } from './components/ProUpgradeModal';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import Header, { type TabId } from '@/components/Header';
+import ResourceHub from '@/components/ResourceHub';
+import QuizEngine from '@/components/QuizEngine';
+import FormulaReference from '@/components/FormulaReference';
+import NoteSubmission from '@/components/NoteSubmission';
+import Newsletter from '@/components/Newsletter';
+import ProUpgradeModal from '@/components/ProUpgradeModal';
+import AuthModal from '@/components/AuthModal';
+import ContactModal from '@/components/ContactModal';
+import PartnerSection from '@/components/PartnerSection';
+import AdminPanel from '@/components/AdminPanel';
+import AiTutorPage from '@/pages/AiTutor';
+import AiChatWidget from '@/components/AiChatWidget';
+import PaymentSuccessPage from '@/pages/PaymentSuccess';
+import { useAuth } from '@/hooks/useAuth';
 
-// Set your admin passkey here
-const ADMIN_PASSKEY = '852852';
+export default function App() {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<TabId>('resources');
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const { profile, isPro, isAdmin, user, loading, signUp, signIn, signOut } = useAuth();
 
-export function App() {
-  const [activeTab, setActiveTab] = useState<'hub' | 'admin'>('hub');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isProModalOpen, setIsProModalOpen] = useState(false);
-  const [isProUser, setIsProUser] = useState(false);
+  const route = useMemo(() => window.location.pathname, []);
+  const isAdminRoute = route === '/admin';
+  const isPaymentSuccess = route === '/payment-success';
+  const isAiTutorRoute = route === '/ai-tutor';
 
-  // Auto-detect /admin URL or query param
-  useEffect(() => {
-    const path = window.location.pathname;
-    const searchParams = new URLSearchParams(window.location.search);
-    if (path.includes('/admin') || searchParams.get('admin') === 'true') {
-      handleAdminAccess();
-    }
-  }, []);
+  if (isPaymentSuccess) {
+    return <PaymentSuccessPage />;
+  }
 
-  const handleAdminAccess = () => {
-    if (isAdminAuthenticated) {
-      setActiveTab('admin');
-      return;
-    }
+  if (isAdminRoute) {
+    return (
+      <AdminPanel
+        isAdmin={isAdmin}
+        userEmail={user?.email ?? null}
+        loading={loading}
+        onBackToApp={() => { window.location.pathname = '/'; }}
+      />
+    );
+  }
 
-    const inputKey = prompt('Enter Admin Passkey:');
-    if (inputKey === ADMIN_PASSKEY) {
-      setIsAdminAuthenticated(true);
-      setActiveTab('admin');
-    } else if (inputKey !== null) {
-      alert('Incorrect passkey!');
-      setActiveTab('hub');
-    }
-  };
+  if (isAiTutorRoute) {
+    return (
+      <>
+        <AiTutorPage
+          isPro={isPro}
+          onUpgradeClick={() => setUpgradeOpen(true)}
+          onSignInRequired={() => setAuthOpen(true)}
+          onBackToApp={() => { window.location.pathname = '/'; }}
+        />
+        <AuthModal
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          onSignIn={signIn}
+          onSignUp={signUp}
+        />
+        <ProUpgradeModal
+          open={upgradeOpen}
+          onClose={() => setUpgradeOpen(false)}
+          isPro={isPro}
+          userEmail={profile?.email ?? null}
+        />
+      </>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      
-      {/* Navigation Header */}
-      <header className="w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          
-          {/* Restored AeroNotes Logo Icon */}
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => setActiveTab('hub')}
-          >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-cyan-500/20">
-              A
-            </div>
-            <div>
-              <span className="text-white font-bold text-lg tracking-tight">AeroNotes</span>
-              <p className="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:block">
-                For Aircraft Engineering
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-sky-500/5 blur-3xl" />
+        <div className="absolute -top-20 right-0 h-80 w-80 rounded-full bg-amber-500/5 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-slate-500/5 blur-3xl" />
+      </div>
 
-          {/* Navigation Bar */}
-          <nav className="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800/80">
-            <button
-              onClick={() => setActiveTab('hub')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === 'hub'
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" /> Resource Hub
-            </button>
+      <div className="relative">
+        <Header
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isPro={isPro}
+          onUpgradeClick={() => setUpgradeOpen(true)}
+          profile={profile}
+          onSignInClick={() => setAuthOpen(true)}
+          onSignOut={signOut}
+          onContactClick={() => setContactOpen(true)}
+        />
 
-            {/* Admin tab shows ONLY after passkey unlock */}
-            {isAdminAuthenticated && (
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === 'admin'
-                    ? 'bg-cyan-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Shield className="w-4 h-4" /> Admin Panel
-              </button>
-            )}
-          </nav>
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {activeTab === 'resources' && (
+            <>
+              <ResourceHub isPro={isPro} onUpgradeClick={() => setUpgradeOpen(true)} onSignInClick={() => setAuthOpen(true)} />
+              <div className="mt-8">
+                <Newsletter variant="card" />
+              </div>
+            </>
+          )}
+          {activeTab === 'quiz' && (
+            <QuizEngine isPro={isPro} onUpgradeClick={() => setUpgradeOpen(true)} />
+          )}
+          {activeTab === 'formulas' && <FormulaReference />}
+          {activeTab === 'notes' && <NoteSubmission />}
+          {activeTab === 'partner' && <PartnerSection />}
+        </main>
 
-          {/* Right Section */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsProModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
-            >
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span>Upgrade</span>
-            </button>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 font-medium">
-              <span className="w-6 h-6 rounded-lg bg-cyan-600/30 text-cyan-400 flex items-center justify-center font-bold text-[10px]">
-                MM
-              </span>
-              <span className="hidden sm:inline">Mohammed</span>
+        <footer className="border-t border-slate-800/60 py-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center gap-6">
+              <Newsletter variant="compact" />
+              <p className="text-center text-xs text-slate-500">{t('footer.text')}</p>
             </div>
           </div>
+        </footer>
+      </div>
 
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1">
-        {activeTab === 'admin' && isAdminAuthenticated ? (
-          <AdminPanel />
-        ) : (
-          <ResourceHub
-            isProUser={isProUser}
-            onOpenProModal={() => setIsProModalOpen(true)}
-          />
-        )}
-      </main>
-
-      {/* Footer with discreet Admin lock icon */}
-      <footer className="w-full border-t border-slate-800/80 bg-slate-950 py-6 px-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>AeroNotes (MIAT Central) • For UniKL MIAT students & EASA Part-66 candidates</p>
-          <div className="flex items-center gap-4 text-slate-400">
-            <button onClick={() => setActiveTab('hub')} className="hover:text-cyan-400 transition-colors">Hub</button>
-            <button onClick={() => setIsProModalOpen(true)} className="hover:text-amber-400 transition-colors">Pro</button>
-            <button 
-              onClick={handleAdminAccess} 
-              className="hover:text-slate-200 transition-colors p-1 text-slate-600"
-              title="Admin Login"
-            >
-              <Lock className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* Upgrade Modal */}
-      <ProUpgradeModal
-        isOpen={isProModalOpen}
-        onClose={() => setIsProModalOpen(false)}
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSignIn={signIn}
+        onSignUp={signUp}
       />
 
+      <ProUpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        isPro={isPro}
+        userEmail={profile?.email ?? null}
+      />
+
+      <ContactModal
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+      />
+
+      <AiChatWidget
+        isPro={isPro}
+        onUpgradeClick={() => setUpgradeOpen(true)}
+        onSignInRequired={() => setAuthOpen(true)}
+      />
     </div>
   );
 }
-
-export default App;
