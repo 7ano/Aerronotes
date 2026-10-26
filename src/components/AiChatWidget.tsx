@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Send, X, Maximize2, Sparkles, User } from 'lucide-react';
+import { Bot, Send, X, Maximize2, Sparkles } from 'lucide-react';
 
 interface AiChatWidgetProps {
   isPro?: boolean;
@@ -10,7 +10,6 @@ interface AiChatWidgetProps {
 export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
   isPro = false,
   onUpgradeClick,
-  onSignInRequired,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -32,6 +31,20 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
     localStorage.setItem('aeronotes_ai_chats', JSON.stringify(messages));
   }, [messages]);
 
+  const generateDynamicResponse = (prompt: string): string => {
+    const lower = prompt.toLowerCase();
+    if (lower.includes('bernoulli') || lower.includes('lift')) {
+      return "Bernoulli's Principle states that as fluid velocity increases, static pressure decreases. Over an airfoil, upper airflow speeds up, lowering pressure and creating lift ($L = C_L \\cdot \\frac{1}{2} \\rho v^2 S$).";
+    }
+    if (lower.includes('brayton') || lower.includes('turbine') || lower.includes('engine')) {
+      return "The Gas Turbine Brayton Cycle consists of four continuous processes: 1-2 Isentropic Compression, 2-3 Constant Pressure Combustion, 3-4 Isentropic Expansion, and 4-1 Heat Exhaustion.";
+    }
+    if (lower.includes('ohm') || lower.includes('circuit') || lower.includes('voltage')) {
+      return "Ohm's Law defines the relationship in electrical circuits: $V = I \\cdot R$. Voltage ($V$) equals Current ($I$ in Amps) times Resistance ($R$ in Ohms).";
+    }
+    return `Regarding "${prompt}": This concept involves fundamental principles in aircraft maintenance and avionics. Review your EASA Part-66 Module notes on AeroNotes for full formulas and diagrams.`;
+  };
+
   const handleSend = (textToSend?: string) => {
     const messageText = textToSend || input;
     if (!messageText.trim()) return;
@@ -49,20 +62,10 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
       setRemainingUsage((prev) => Math.max(0, prev - 1));
     }
 
-    // AI Response Simulation
     setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Here is the explanation for "${messageText}": In aircraft engineering, this concept is governed by basic aerodynamic and thermodynamic conservation principles. Refer to your EASA Part-66 Module summaries on AeroNotes for detailed derivations.`,
-        },
-      ]);
-    }, 1000);
-  };
-
-  const handleExpandToFullPage = () => {
-    window.location.pathname = '/ai-tutor';
+      const aiReply = generateDynamicResponse(messageText);
+      setMessages((prev) => [...prev, { role: 'assistant', content: aiReply }]);
+    }, 800);
   };
 
   if (!isOpen) {
@@ -79,7 +82,6 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[500px]">
-      {/* Header */}
       <div className="flex items-center justify-between p-3.5 bg-slate-950 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-cyan-500/20 text-cyan-400 rounded-lg">
@@ -88,16 +90,16 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
           <div>
             <h4 className="text-xs font-bold text-white">Aviation AI Tutor</h4>
             <p className="text-[10px] text-cyan-400 font-medium">
-              {isPro ? 'Unlimited Pro Access' : `${remainingUsage}/5 left today`}
+              {isPro ? 'Unlimited Pro Access' : `${remainingUsage}/5 queries left today`}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
           <button
-            onClick={handleExpandToFullPage}
+            onClick={() => { window.location.pathname = '/ai-tutor'; }}
             className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
-            title="Expand to full page"
+            title="Expand"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
@@ -110,7 +112,6 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
         </div>
       </div>
 
-      {/* Chat Messages */}
       <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-950/50 text-xs">
         {messages.length === 0 ? (
           <div className="text-center py-8 px-4 space-y-3">
@@ -152,7 +153,6 @@ export const AiChatWidget: React.FC<AiChatWidgetProps> = ({
         )}
       </div>
 
-      {/* Input */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
