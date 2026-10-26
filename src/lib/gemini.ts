@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 export interface GeminiMessage {
   role: 'user' | 'model';
   text: string;
@@ -12,7 +14,6 @@ const SYSTEM_INSTRUCTION =
   'Piston Engines, Aircraft Structures, and Aviation Legislation.';
 
 const MODEL = 'gemini-2.5-flash';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 /**
  * Call Google Gemini to get a single AI tutor response.
@@ -25,52 +26,34 @@ export async function askGemini(
 ): Promise<string> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
+    console.error('[gemini] VITE_GEMINI_API_KEY is missing');
     return 'API key is missing. Please set VITE_GEMINI_API_KEY in your .env file.';
   }
 
-  const contents = [
-    ...history.map(msg => ({ role: msg.role, parts: [{ text: msg.text }] })),
-    { role: 'user' as const, parts: [{ text: userPrompt }] },
-  ];
-
-  const body = {
-    contents,
-    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-  };
-
-  let response: Response;
   try {
-    response = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal,
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: MODEL,
+      systemInstruction: SYSTEM_INSTRUCTION,
+      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
     });
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    throw new Error('Could not reach the Gemini API. Check your internet connection and try again.');
+    const chat = model.startChat({
+      history: history.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.text }],
+      })),
+    });
+    const result = await chat.sendMessage(userPrompt, { signal });
+    const aiText = result.response.text();
+
+    if (!aiText) {
+      throw new Error('Gemini returned an empty response.');
+    }
+
+    return aiText;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    console.error('[gemini] API request failed:', error);
+    throw new Error('Gemini request failed. Please try again.');
   }
-
-  if (response.status !== 200) {
-    const errorBody = await response.text().catch(() => '');
-    console.error('[gemini] API error', response.status, errorBody.slice(0, 500));
-    let detail = '';
-    try {
-      const parsed = JSON.parse(errorBody);
-      detail = parsed?.error?.message ?? '';
-    } catch { /* not JSON */ }
-    throw new Error(
-      `Gemini API error (${response.status})${detail ? `: ${detail}` : ''}. Please try again.`,
-    );
-  }
-
-  const data = await response.json();
-  const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!aiText || typeof aiText !== 'string') {
-    throw new Error('Gemini returned an empty response. Please try rephrasing your question.');
-  }
-
-  return aiText;
 }
