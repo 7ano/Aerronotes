@@ -63,7 +63,7 @@ export default function App() {
           open={upgradeOpen}
           onClose={() => setUpgradeOpen(false)}
           isPro={isPro}
-          userEmail={profile?.email ?? null}
+          userEmail={user?.email ?? profile?.email ?? null}
         />
       </>
     );
@@ -92,7 +92,11 @@ export default function App() {
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {activeTab === 'resources' && (
             <>
-              <ResourceHub isPro={isPro} onUpgradeClick={() => setUpgradeOpen(true)} onSignInClick={() => setAuthOpen(true)} />
+              <ResourceHub 
+                isPro={isPro} 
+                onUpgradeClick={() => setUpgradeOpen(true)} 
+                onSignInClick={() => setAuthOpen(true)} 
+              />
               <div className="mt-8">
                 <Newsletter variant="card" />
               </div>
@@ -127,7 +131,7 @@ export default function App() {
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         isPro={isPro}
-        userEmail={profile?.email ?? null}
+        userEmail={user?.email ?? profile?.email ?? null}
       />
 
       <ContactModal
