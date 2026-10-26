@@ -26,6 +26,39 @@ export interface HeaderProps {
   onContactClick: () => void;
 }
 
+// تصدير مكون TrackToggle المطلوب في NoteSubmission.tsx
+export const TrackToggle: React.FC<{
+  track?: 'academic' | 'easa';
+  onTrackChange?: (track: 'academic' | 'easa') => void;
+}> = ({ track = 'academic', onTrackChange }) => {
+  return (
+    <div className="inline-flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
+      <button
+        type="button"
+        onClick={() => onTrackChange && onTrackChange('academic')}
+        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+          track === 'academic'
+            ? 'bg-cyan-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white'
+        }`}
+      >
+        Academic (UniKL)
+      </button>
+      <button
+        type="button"
+        onClick={() => onTrackChange && onTrackChange('easa')}
+        className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+          track === 'easa'
+            ? 'bg-cyan-600 text-white shadow-sm'
+            : 'text-slate-400 hover:text-white'
+        }`}
+      >
+        EASA Part-66
+      </button>
+    </div>
+  );
+};
+
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onTabChange,
@@ -132,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* Action Controls */}
+        {/* Right Action Items */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
