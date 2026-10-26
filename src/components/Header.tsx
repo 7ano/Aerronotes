@@ -26,7 +26,6 @@ export interface HeaderProps {
   onContactClick: () => void;
 }
 
-// تصدير مكون TrackToggle المطلوب في NoteSubmission.tsx
 export const TrackToggle: React.FC<{
   track?: 'academic' | 'easa';
   onTrackChange?: (track: 'academic' | 'easa') => void;
@@ -71,9 +70,16 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { i18n } = useTranslation();
 
-  const toggleLanguage = () => {
-    const nextLang = i18n.language === 'en' ? 'ms' : 'en';
+  // Multi-Language Cycle: EN -> MS -> AR -> EN
+  const cycleLanguage = () => {
+    const current = i18n.language || 'en';
+    let nextLang = 'en';
+    if (current.startsWith('en')) nextLang = 'ms';
+    else if (current.startsWith('ms')) nextLang = 'ar';
+    else nextLang = 'en';
+    
     i18n.changeLanguage(nextLang);
+    document.documentElement.dir = nextLang === 'ar' ? 'rtl' : 'ltr';
   };
 
   const getUserInitials = () => {
@@ -82,16 +88,23 @@ export const Header: React.FC<HeaderProps> = ({
     return name.substring(0, 2).toUpperCase();
   };
 
+  const getLanguageLabel = () => {
+    const lang = (i18n.language || 'en').substring(0, 2);
+    if (lang === 'ms') return 'MS';
+    if (lang === 'ar') return 'العربية';
+    return 'EN';
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* AeroNotes Logo */}
+        {/* Brand Logo & Name */}
         <div
           className="flex cursor-pointer items-center gap-3"
           onClick={() => onTabChange('resources')}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 font-black text-xl text-slate-950 shadow-lg shadow-cyan-500/20">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-cyan-400 text-slate-950 font-black text-xl shadow-lg shadow-cyan-500/20">
             A
           </div>
           <div>
@@ -102,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Center Navigation Bar */}
         <nav className="hidden items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 md:flex">
           <button
             type="button"
@@ -165,17 +178,20 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* Right Action Items */}
+        {/* Right Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Cycler (EN -> MS -> AR) */}
           <button
             type="button"
-            onClick={toggleLanguage}
+            onClick={cycleLanguage}
             className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+            title="Switch Language (English / Malay / Arabic)"
           >
             <Globe className="h-3.5 w-3.5 text-cyan-400" />
-            <span className="uppercase">{i18n.language || 'EN'}</span>
+            <span className="font-bold">{getLanguageLabel()}</span>
           </button>
 
+          {/* Contact Trigger */}
           <button
             type="button"
             onClick={onContactClick}
@@ -184,6 +200,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Mail className="h-3.5 w-3.5 text-slate-400" /> Contact
           </button>
 
+          {/* Upgrade Trigger */}
           <button
             type="button"
             onClick={onUpgradeClick}
@@ -197,6 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{isPro ? 'Pro Active' : 'Upgrade'}</span>
           </button>
 
+          {/* Auth State */}
           {profile ? (
             <div className="flex items-center gap-1">
               <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200">
