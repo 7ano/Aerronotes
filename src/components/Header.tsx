@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* الشعار - AeroNotes */}
+        {/* AeroNotes Logo */}
         <div
           className="flex cursor-pointer items-center gap-3"
           onClick={() => onTabChange('resources')}
@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* أزرار التنقل الرئيسية */}
+        {/* Navigation Tabs */}
         <nav className="hidden items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 md:flex">
           <button
             type="button"
@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* الأزرار الجانبية (اللغة، التواصل، الترقية، الحساب) */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
