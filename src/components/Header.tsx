@@ -13,7 +13,7 @@ import {
   Globe,
 } from 'lucide-react';
 
-export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes' | 'partner' | 'profile';
+export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes' | 'partner';
 
 interface HeaderProps {
   activeTab: TabId;
@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Left: Brand Logo */}
+        {/* AeroNotes Brand & Logo */}
         <div
           className="flex cursor-pointer items-center gap-3"
           onClick={() => onTabChange('resources')}
@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Center: Navigation Tabs */}
+        {/* Center Navigation Tabs */}
         <nav className="hidden items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 md:flex">
           <button
             type="button"
@@ -130,23 +130,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Users className="h-4 w-4" /> Partner
           </button>
-
-          {profile && (
-            <button
-              type="button"
-              onClick={() => onTabChange('profile')}
-              className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-                activeTab === 'profile'
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <User className="h-4 w-4" /> My Profile
-            </button>
-          )}
         </nav>
 
-        {/* Right: Actions */}
+        {/* Right Action Items */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Language Switcher */}
           <button
@@ -159,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="uppercase">{i18n.language || 'EN'}</span>
           </button>
 
-          {/* Contact Modal Trigger */}
+          {/* Contact Button */}
           <button
             type="button"
             onClick={onContactClick}
@@ -182,26 +168,22 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{isPro ? 'Pro Active' : 'Upgrade'}</span>
           </button>
 
-          {/* Auth State Button */}
+          {/* Auth State & User Badge */}
           {profile ? (
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => onTabChange('profile')}
-                className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-500/50 transition-all"
-              >
+              <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200">
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-600/30 text-[10px] font-bold text-cyan-400">
                   {getUserInitials()}
                 </span>
                 <span className="hidden font-semibold sm:inline">
-                  {profile.full_name?.split(' ')[0] || 'Profile'}
+                  {profile.full_name?.split(' ')[0] || 'User'}
                 </span>
-              </button>
+              </div>
 
               <button
                 type="button"
                 onClick={onSignOut}
-                className="p-2 text-slate-400 hover:text-rose-400 transition-colors"
+                className="p-2 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
                 title="Sign Out"
               >
                 <LogOut className="h-4 w-4" />
