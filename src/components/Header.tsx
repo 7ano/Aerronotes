@@ -98,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
           <img
             src={logoUrl}
             alt="AeroNotes"
-            className="h-9 w-9 rounded-xl shadow-lg shadow-cyan-500/20 object-contain"
+            className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/20 object-contain shrink-0"
           />
           <div>
             <span className="font-bold text-lg text-white tracking-tight">{t('header.appName')}</span>
