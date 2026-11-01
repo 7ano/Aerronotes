@@ -95,13 +95,16 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex cursor-pointer items-center gap-3"
           onClick={() => onTabChange('resources')}
         >
-          <img
-            src={logoUrl}
-            alt="AeroNotes"
-            className="h-10 w-10 rounded-xl shadow-lg shadow-cyan-500/20 object-contain shrink-0"
-          />
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-md" />
+            <img
+              src={logoUrl}
+              alt="AeroNotes"
+              className="relative h-10 w-10 rounded-xl object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]"
+            />
+          </div>
           <div>
-            <span className="font-bold text-lg text-white tracking-tight">{t('header.appName')}</span>
+            <span className="text-xl font-bold text-white tracking-wide">{t('header.appName')}</span>
             <p className="-mt-1 hidden text-[10px] font-medium text-slate-400 sm:block">
               {t('header.appTagline')}
             </p>
@@ -115,10 +118,10 @@ export const Header: React.FC<HeaderProps> = ({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
-              className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'bg-cyan-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-500/30 ring-1 ring-cyan-400/40'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
               {tab.icon} {tab.label}

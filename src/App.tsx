@@ -91,16 +91,10 @@ export default function App() {
 
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {activeTab === 'resources' && (
-            <>
-              <ResourceHub 
-                isPro={isPro} 
-                onUpgradeClick={() => setUpgradeOpen(true)} 
-                onSignInClick={() => setAuthOpen(true)} 
-              />
-              <div className="mt-8">
-                <Newsletter variant="card" />
-              </div>
-            </>
+            <ResourceHub
+              isProUser={isPro}
+              onOpenProModal={() => setUpgradeOpen(true)}
+            />
           )}
           {activeTab === 'quiz' && (
             <QuizEngine isPro={isPro} onUpgradeClick={() => setUpgradeOpen(true)} />
@@ -111,8 +105,8 @@ export default function App() {
         </main>
 
         <footer className="border-t border-slate-800/60 py-8">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col items-center gap-6">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center gap-4">
               <Newsletter variant="compact" />
               <p className="text-center text-xs text-slate-500">{t('footer.text')}</p>
             </div>

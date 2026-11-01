@@ -148,7 +148,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
             return (
               <div
                 key={resource.id}
-                className="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 shadow-xl group hover:shadow-cyan-950/20"
+                className="bg-slate-900/80 backdrop-blur-md border border-slate-800/80 hover:border-cyan-500/40 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 shadow-xl group hover:shadow-cyan-950/30"
               >
                 <div>
                   {/* Badges */}
