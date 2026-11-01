@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, Eye, Lock, Loader2, Sparkles, BookOpen } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { PdfPreviewModal } from './PdfPreviewModal';
@@ -31,6 +32,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
   isProUser = false,
   onOpenProModal,
 }) => {
+  const { t } = useTranslation();
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPdf, setSelectedPdf] = useState<{
@@ -118,14 +120,14 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-800/80">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-cyan-400" /> Resource Hub
+            <BookOpen className="w-6 h-6 text-cyan-400" /> {t('resources.title')}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Access verified Aircraft Engineering notes, summaries, and exam guides
+            {t('resources.subtitleAcademic')}
           </p>
         </div>
         <span className="text-xs font-semibold px-3 py-1 bg-slate-800 text-cyan-400 border border-slate-700 rounded-full">
-          {resources.length} resources available
+          {t('resources.resourcesFound', { count: resources.length })}
         </span>
       </div>
 
@@ -133,9 +135,9 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
       {resources.length === 0 ? (
         <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-2xl">
           <Sparkles className="w-10 h-10 text-cyan-500/40 mx-auto mb-3" />
-          <p className="text-slate-300 font-medium">No study materials uploaded yet.</p>
+          <p className="text-slate-300 font-medium">{t('resources.noResources')}</p>
           <p className="text-xs text-slate-500 mt-1">
-            Notes uploaded via the Admin panel will appear here immediately.
+            {t('resources.previewDesc')}
           </p>
         </div>
       ) : (
@@ -192,7 +194,7 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                     onClick={(e) => handlePreview(e, resource)}
                     className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer active:scale-95"
                   >
-                    <Eye className="w-3.5 h-3.5 text-cyan-400" /> Preview
+                    <Eye className="w-3.5 h-3.5 text-cyan-400" /> {t('resources.preview')}
                   </button>
 
                   <button
@@ -206,11 +208,11 @@ export const ResourceHub: React.FC<ResourceHubProps> = ({
                   >
                     {proStatus && !isProUser ? (
                       <>
-                        <Lock className="w-3.5 h-3.5" /> Unlock Pro
+                        <Lock className="w-3.5 h-3.5" /> {t('resources.unlock')}
                       </>
                     ) : (
                       <>
-                        <Download className="w-3.5 h-3.5" /> Get Note
+                        <Download className="w-3.5 h-3.5" /> {t('resources.get')}
                       </>
                     )}
                   </button>

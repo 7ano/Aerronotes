@@ -10,8 +10,8 @@ import {
   User,
   LogOut,
   Mail,
-  Globe,
 } from 'lucide-react';
+import LanguageSelector from './LanguageSelector';
 
 export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes' | 'partner';
 
@@ -30,6 +30,7 @@ export const TrackToggle: React.FC<{
   track?: 'academic' | 'easa';
   onTrackChange?: (track: 'academic' | 'easa') => void;
 }> = ({ track = 'academic', onTrackChange }) => {
+  const { t } = useTranslation();
   return (
     <div className="inline-flex items-center bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs font-semibold">
       <button
@@ -41,7 +42,7 @@ export const TrackToggle: React.FC<{
             : 'text-slate-400 hover:text-white'
         }`}
       >
-        Academic (UniKL)
+        {t('header.uniKlMiat')}
       </button>
       <button
         type="button"
@@ -52,7 +53,7 @@ export const TrackToggle: React.FC<{
             : 'text-slate-400 hover:text-white'
         }`}
       >
-        EASA Part-66
+        {t('header.easaPart66')}
       </button>
     </div>
   );
@@ -68,13 +69,15 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
   onContactClick,
 }) => {
-  const { i18n } = useTranslation();
+  const { t } = useTranslation();
 
-  const toggleLanguage = () => {
-    const nextLang = i18n.language === 'en' ? 'ms' : 'en';
-    i18n.changeLanguage(nextLang);
-    document.documentElement.dir = 'ltr';
-  };
+  const tabs: { id: TabId; icon: React.ReactNode; label: string }[] = [
+    { id: 'resources', icon: <BookOpen className="h-4 w-4" />, label: t('nav.resourceHub') },
+    { id: 'quiz', icon: <Award className="h-4 w-4" />, label: t('nav.easaQuiz') },
+    { id: 'formulas', icon: <BookMarked className="h-4 w-4" />, label: t('nav.formulas') },
+    { id: 'notes', icon: <FileUp className="h-4 w-4" />, label: t('nav.notes') },
+    { id: 'partner', icon: <Users className="h-4 w-4" />, label: t('nav.partner') },
+  ];
 
   const getUserInitials = () => {
     if (!profile) return 'GU';
@@ -85,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        
+
         {/* Brand Logo */}
         <div
           className="flex cursor-pointer items-center gap-3"
@@ -95,93 +98,41 @@ export const Header: React.FC<HeaderProps> = ({
             A
           </div>
           <div>
-            <span className="font-bold text-lg text-white tracking-tight">AeroNotes</span>
+            <span className="font-bold text-lg text-white tracking-tight">{t('header.appName')}</span>
             <p className="-mt-1 hidden text-[10px] font-medium text-slate-400 sm:block">
-              For Aircraft Engineering
+              {t('header.appTagline')}
             </p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
         <nav className="hidden items-center gap-1 rounded-xl border border-slate-800/80 bg-slate-900/60 p-1 md:flex">
-          <button
-            type="button"
-            onClick={() => onTabChange('resources')}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === 'resources'
-                ? 'bg-cyan-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <BookOpen className="h-4 w-4" /> Resource Hub
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTabChange('quiz')}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === 'quiz'
-                ? 'bg-cyan-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Award className="h-4 w-4" /> EASA Quiz
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTabChange('formulas')}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === 'formulas'
-                ? 'bg-cyan-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <BookMarked className="h-4 w-4" /> Formulas & Acronyms
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTabChange('notes')}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === 'notes'
-                ? 'bg-cyan-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <FileUp className="h-4 w-4" /> Submit Notes
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTabChange('partner')}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
-              activeTab === 'partner'
-                ? 'bg-cyan-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Users className="h-4 w-4" /> Partner
-          </button>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onTabChange(tab.id)}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                activeTab === tab.id
+                  ? 'bg-cyan-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
         </nav>
 
         {/* Right Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
-          >
-            <Globe className="h-3.5 w-3.5 text-cyan-400" />
-            <span className="uppercase">{i18n.language || 'EN'}</span>
-          </button>
+          <LanguageSelector />
 
           <button
             type="button"
             onClick={onContactClick}
             className="hidden sm:flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
           >
-            <Mail className="h-3.5 w-3.5 text-slate-400" /> Contact
+            <Mail className="h-3.5 w-3.5 text-slate-400" /> {t('nav.contact')}
           </button>
 
           <button
@@ -194,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Crown className={`h-4 w-4 ${isPro ? 'text-emerald-400' : 'text-amber-400'}`} />
-            <span>{isPro ? 'Pro Active' : 'Upgrade'}</span>
+            <span>{isPro ? t('header.pro') : t('header.upgrade')}</span>
           </button>
 
           {profile ? (
@@ -204,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {getUserInitials()}
                 </span>
                 <span className="hidden font-semibold sm:inline">
-                  {profile.full_name?.split(' ')[0] || 'User'}
+                  {profile.full_name?.split(' ')[0] || t('header.pro')}
                 </span>
               </div>
 
@@ -212,6 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
                 type="button"
                 onClick={onSignOut}
                 className="p-2 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                aria-label={t('header.signOut')}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -222,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onSignInClick}
               className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-cyan-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:bg-cyan-500 transition-all active:scale-95"
             >
-              <User className="h-4 w-4" /> Sign In
+              <User className="h-4 w-4" /> {t('header.signIn')}
             </button>
           )}
         </div>
