@@ -12,6 +12,7 @@ import {
   Mail,
 } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
+import logoUrl from '@/LO.svg';
 
 export type TabId = 'resources' | 'quiz' | 'formulas' | 'notes' | 'partner';
 
@@ -94,9 +95,11 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex cursor-pointer items-center gap-3"
           onClick={() => onTabChange('resources')}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 font-black text-xl text-slate-950 shadow-lg shadow-cyan-500/20">
-            A
-          </div>
+          <img
+            src={logoUrl}
+            alt="AeroNotes"
+            className="h-9 w-9 rounded-xl shadow-lg shadow-cyan-500/20 object-contain"
+          />
           <div>
             <span className="font-bold text-lg text-white tracking-tight">{t('header.appName')}</span>
             <p className="-mt-1 hidden text-[10px] font-medium text-slate-400 sm:block">
