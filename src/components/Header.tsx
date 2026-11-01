@@ -100,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
             <img
               src={logoUrl}
               alt="AeroNotes"
-              className="relative h-14 w-14 rounded-xl object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]"
+              className="relative h-16 w-16 rounded-xl object-contain drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]"
             />
           </div>
           <div>
